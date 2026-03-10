@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Académie AMF</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    [x-cloak] { display: none; }
+    .tab-active { border-bottom: 2px solid #1d4ed8; color: #1d4ed8; font-weight: 600; }
+    .tab-inactive { border-bottom: 2px solid transparent; color: #6b7280; }
+    .tab-inactive:hover { color: #374151; border-bottom-color: #d1d5db; }
+    .discipline-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 50; display: flex; align-items: center; justify-content: center; }
+    .border-discipline-jiujitsu { border-left-color: #c9a227; }
+    .border-discipline-muaythai { border-left-color: #dc2626; }
+    .border-discipline-superkids { border-left-color: #22d3ee; }
+    .border-discipline-gracie { border-left-color: #2563eb; }
+    .unsaved-dot { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen font-sans">
+
+  <!-- LOGIN OVERLAY -->
+  <div id="loginOverlay" class="fixed inset-0 bg-gray-900 flex items-center justify-center z-[100]">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm">
+      <div class="text-center mb-6">
+        <div class="text-3xl font-black text-gray-900 tracking-tight mb-1">AMF</div>
+        <div class="text-sm text-gray-500">Panneau d'administration</div>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+        <input
+          id="passwordInput"
+          type="password"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Mot de passe admin"
+          autocomplete="current-password"
+        />
+        <div id="loginError" class="text-red-500 text-xs mt-1 hidden">Mot de passe incorrect.</div>
+      </div>
+      <button
+        id="loginBtn"
+        class="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 rounded-lg text-sm transition"
+      >Connexion</button>
+    </div>
+  </div>
+
+  <!-- MAIN APP (hidden until login) -->
+  <div id="app" class="hidden">
+
+    <!-- TOP NAV -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
+        <div class="flex items-center gap-3">
+          <span class="font-black text-lg text-gray-900">AMF</span>
+          <span class="text-gray-400 text-sm hidden sm:block">Administration</span>
+          <span id="unsavedIndicator" class="hidden items-center gap-1 text-amber-600 text-xs font-medium ml-2">
+            <span class="unsaved-dot inline-block w-2 h-2 rounded-full bg-amber-500"></span>
+            Modifications non enregistrées
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="downloadBtnTop" class="bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+            Télécharger JSON
+          </button>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <nav class="flex gap-0 -mb-px overflow-x-auto" id="tabNav" role="tablist">
+          <button class="tab-btn tab-active px-4 py-3 text-sm whitespace-nowrap transition border-b-2" data-tab="cours" role="tab">Cours</button>
+          <button class="tab-btn tab-inactive px-4 py-3 text-sm whitespace-nowrap transition border-b-2" data-tab="conges" role="tab">Congés</button>
+          <button class="tab-btn tab-inactive px-4 py-3 text-sm whitespace-nowrap transition border-b-2" data-tab="evenements" role="tab">Événements</button>
+          <button class="tab-btn tab-inactive px-4 py-3 text-sm whitespace-nowrap transition border-b-2" data-tab="parametres" role="tab">Paramètres</button>
+          <button class="tab-btn tab-inactive px-4 py-3 text-sm whitespace-nowrap transition border-b-2" data-tab="actions" role="tab">Actions</button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+
+      <!-- TAB: COURS -->
+      <section id="tab-cours" class="tab-content">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-gray-900">Gestion des cours</h2>
+        </div>
+        <div id="scheduleAccordion" class="space-y-3"></div>
+      </section>
+
+      <!-- TAB: CONGES -->
+      <section id="tab-conges" class="tab-content hidden">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-gray-900">Congés et fermetures</h2>
+          <button id="addHolidayBtn" class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">+ Ajouter un congé</button>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-gray-50 border-b border-gray-200">
+                <th class="text-left px-4 py-3 font-semibold text-gray-600">Date début</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-600">Date fin</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-600">Nom / Raison</th>
+                <th class="text-right px-4 py-3 font-semibold text-gray-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="holidaysTableBody">
+              <tr><td colspan="4" class="text-center text-gray-400 py-8">Aucun congé</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB: EVENEMENTS -->
+      <section id="tab-evenements" class="tab-content hidden">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-gray-900">Événements spéciaux</h2>
+          <button id="addEventBtn" class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">+ Ajouter un événement</button>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-gray-50 border-b border-gray-200">
+                <th class="text-left px-4 py-3 font-semibold text-gray-600">Date</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-600">Nom</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-600">Type</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-600">Important</th>
+                <th class="text-right px-4 py-3 font-semibold text-gray-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="eventsTableBody">
+              <tr><td colspan="5" class="text-center text-gray-400 py-8">Aucun événement</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB: PARAMETRES -->
+      <section id="tab-parametres" class="tab-content hidden">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">Paramètres généraux</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Académie -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <h3 class="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide">Académie</h3>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Nom de l'académie</label>
+                <input id="paramAcademy" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Nom de la session</label>
+                <input id="paramSession" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">Début de session</label>
+                  <input id="paramSessionStart" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">Fin de session</label>
+                  <input id="paramSessionEnd" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <h3 class="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide">Contact</h3>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Courriel</label>
+                <input id="paramEmail" type="email" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Téléphone (optionnel)</label>
+                <input id="paramPhone" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Adresse (optionnel)</label>
+                <input id="paramAddress" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Annonces -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mt-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-800 text-sm uppercase tracking-wide">Annonces</h3>
+            <button id="addAnnouncementBtn" class="bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">+ Ajouter</button>
+          </div>
+          <div id="announcementsList" class="space-y-2"></div>
+          <p id="noAnnouncements" class="text-sm text-gray-400 py-2 hidden">Aucune annonce.</p>
+        </div>
+
+        <!-- Save params button -->
+        <div class="mt-4 flex justify-end">
+          <button id="saveParamsBtn" class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">Enregistrer les paramètres</button>
+        </div>
+      </section>
+
+      <!-- TAB: ACTIONS -->
+      <section id="tab-actions" class="tab-content hidden">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">Actions</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col gap-3">
+            <div class="text-sm font-semibold text-gray-800">Télécharger le JSON</div>
+            <p class="text-xs text-gray-500">Exporte l'horaire complet dans un fichier <code>schedule.json</code> prêt à déployer.</p>
+            <button id="downloadBtnMain" class="mt-auto bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Télécharger schedule.json</button>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col gap-3">
+            <div class="text-sm font-semibold text-gray-800">Importer un JSON</div>
+            <p class="text-xs text-gray-500">Charge un fichier <code>schedule.json</code> existant pour le modifier.</p>
+            <label class="mt-auto cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition text-center">
+              Choisir un fichier…
+              <input type="file" accept=".json" id="importFileInput" class="hidden" />
+            </label>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col gap-3">
+            <div class="text-sm font-semibold text-gray-800">Aperçu public</div>
+            <p class="text-xs text-gray-500">Ouvre le site public <code>index.html</code> dans un nouvel onglet.</p>
+            <button id="previewBtn" class="mt-auto bg-gray-700 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Ouvrir l'aperçu</button>
+          </div>
+
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 mt-6">
+          <div class="text-sm font-semibold text-amber-800 mb-2">Flux de travail</div>
+          <ol class="text-sm text-amber-700 space-y-1 list-decimal list-inside">
+            <li>Modifiez l'horaire dans cet admin</li>
+            <li>Téléchargez le JSON mis à jour</li>
+            <li>Remplacez <code>schedule.json</code> dans le dépôt GitHub</li>
+            <li>Netlify redéploie automatiquement (~30 secondes)</li>
+          </ol>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL COURS -->
+  <div id="courseModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h3 id="courseModalTitle" class="font-bold text-gray-900">Ajouter un cours</h3>
+        <button class="modal-close text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+        <input type="hidden" id="courseId" />
+        <input type="hidden" id="courseDayIndex" />
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Nom du cours <span class="text-red-500">*</span></label>
+          <input id="courseName" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex: Enfants débutants" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Heure de début <span class="text-red-500">*</span></label>
+            <input id="courseStartTime" type="time" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Heure de fin <span class="text-red-500">*</span></label>
+            <input id="courseEndTime" type="time" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Durée (calculée automatiquement)</label>
+          <input id="courseDuration" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500" placeholder="Ex: 45 min" readonly />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Description</label>
+          <input id="courseDescription" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex: Jiu-Jitsu d'autodéfense" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Tranche d'âge</label>
+          <input id="courseAgeGroup" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex: 3 à 4 ans" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Discipline <span class="text-red-500">*</span></label>
+          <select id="courseDiscipline" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">— Choisir —</option>
+            <option value="jiujitsu">Jiu-Jitsu d'autodéfense</option>
+            <option value="muaythai">Muay Thai</option>
+            <option value="superkids">Programme Superkids</option>
+            <option value="gracie">Gracie Jiu-Jitsu</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
+        <button class="modal-close text-sm text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg">Annuler</button>
+        <button id="saveCourseBtn" class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONGE -->
+  <div id="holidayModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h3 id="holidayModalTitle" class="font-bold text-gray-900">Ajouter un congé</h3>
+        <button class="modal-close text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <input type="hidden" id="holidayId" />
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Date de début <span class="text-red-500">*</span></label>
+          <input id="holidayDate" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Date de fin (optionnel)</label>
+          <input id="holidayEndDate" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Nom / Raison <span class="text-red-500">*</span></label>
+          <input id="holidayName" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex: Semaine de relâche" />
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
+        <button class="modal-close text-sm text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg">Annuler</button>
+        <button id="saveHolidayBtn" class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EVENEMENT -->
+  <div id="eventModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h3 id="eventModalTitle" class="font-bold text-gray-900">Ajouter un événement</h3>
+        <button class="modal-close text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <input type="hidden" id="eventId" />
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Date <span class="text-red-500">*</span></label>
+          <input id="eventDate" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Nom <span class="text-red-500">*</span></label>
+          <input id="eventName" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex: Passage de grades" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Description</label>
+          <textarea id="eventDescription" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Détails de l'événement…"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Type</label>
+          <select id="eventType" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="passage_grades">Passage de grades</option>
+            <option value="stage">Stage</option>
+            <option value="portes_ouvertes">Portes ouvertes</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input id="eventImportant" type="checkbox" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
+          <span class="text-sm text-gray-700">Important (affiche un badge sur le site)</span>
+        </label>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
+        <button class="modal-close text-sm text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg">Annuler</button>
+        <button id="saveEventBtn" class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ANNONCE -->
+  <div id="announcementModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h3 id="announcementModalTitle" class="font-bold text-gray-900">Ajouter une annonce</h3>
+        <button class="modal-close text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <input type="hidden" id="announcementId" />
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Texte de l'annonce <span class="text-red-500">*</span></label>
+          <textarea id="announcementText" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Ex: Passage de grades le 15 mars!"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Type</label>
+          <select id="announcementType" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="info">Info</option>
+            <option value="warning">Avertissement</option>
+            <option value="important">Important</option>
+          </select>
+        </div>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input id="announcementActive" type="checkbox" checked class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
+          <span class="text-sm text-gray-700">Afficher sur le site (active)</span>
+        </label>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
+        <button class="modal-close text-sm text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg">Annuler</button>
+        <button id="saveAnnouncementBtn" class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast hidden">
+    <div id="toastInner" class="flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white min-w-[200px]">
+      <span id="toastMsg"></span>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+{
+  "academy": "Académie d'Arts Martiaux Familial",
+  "session": "Session Printemps 2026",
+  "sessionStart": "2026-04-07",
+  "sessionEnd": "2026-06-10",
+  "updated": "2026-03-10",
+  "contact": {
+    "email": "info@academie-amf.com",
+    "phone": "",
+    "address": "129 avenue Principale, Rouyn-Noranda (Québec) J9X 4P3 — Sous-sol, 3e studio"
+  },
+  "announcements": [
+    {
+      "id": "a1",
+      "text": "Passage de grades du 7 au 10 juin — dernière semaine de cours!",
+      "type": "info",
+      "active": true
+    }
+  ],
+  "disciplines": {
+    "jiujitsu": {
+      "label": "Jiu-Jitsu d'autodéfense",
+      "color": "#c9a227"
+    },
+    "muaythai": {
+      "label": "Muay Thai",
+      "color": "#dc2626"
+    },
+    "superkids": {
+      "label": "Programme Superkids",
+      "color": "#22d3ee"
+    },
+    "gracie": {
+      "label": "Gracie Jiu-Jitsu",
+      "color": "#2563eb"
+    }
+  },
+  "holidays": [],
+  "events": [
+    {
+      "id": "e1",
+      "date": "2026-06-07",
+      "endDate": "2026-06-10",
+      "name": "Passage de grades",
+      "description": "Dernière semaine de cours — Évaluation et remise de ceintures dans chaque cours",
+      "type": "passage_grades",
+      "important": true
+    },
+    {
+      "id": "e2",
+      "date": "2026-06-14",
+      "name": "Compétition",
+      "description": "",
+      "type": "autre",
+      "important": true
+    }
+  ],
+  "schedule": [
+    {
+      "day": "Dimanche",
+      "dayShort": "Dim",
+      "dayIndex": 0,
+      "classes": [
+        {
+          "id": "c1",
+          "time": "16:00 - 16:45",
+          "startTime": "16:00",
+          "endTime": "16:45",
+          "name": "SUPERKIDS",
+          "description": "Programme parent-enfant — Initiation aux arts martiaux",
+          "ageGroup": "3 à 4 ans",
+          "discipline": "superkids",
+          "duration": "45 min"
+        },
+        {
+          "id": "c2",
+          "time": "17:00 - 17:55",
+          "startTime": "17:00",
+          "endTime": "17:55",
+          "name": "Superkid 5-6 ans & Enfants débutants",
+          "description": "Jiu-Jitsu d'autodéfense",
+          "ageGroup": "5 à 8 ans",
+          "discipline": "jiujitsu",
+          "duration": "55 min"
+        },
+        {
+          "id": "c3",
+          "time": "18:00 - 18:55",
+          "startTime": "18:00",
+          "endTime": "18:55",
+          "name": "Enfants intermédiaire",
+          "description": "Jiu-Jitsu d'autodéfense",
+          "ageGroup": "8 à 10 ans",
+          "discipline": "jiujitsu",
+          "duration": "55 min"
+        },
+        {
+          "id": "c4",
+          "time": "19:00 - 20:00",
+          "startTime": "19:00",
+          "endTime": "20:00",
+          "name": "Enfants avancé et adultes",
+          "description": "Jiu-Jitsu d'autodéfense",
+          "ageGroup": "10 ans et plus",
+          "discipline": "jiujitsu",
+          "duration": "1h"
+        }
+      ]
+    },
+    {
+      "day": "Lundi",
+      "dayShort": "Lun",
+      "dayIndex": 1,
+      "classes": [
+        {
+          "id": "c5",
+          "time": "19:10 - 19:55",
+          "startTime": "19:10",
+          "endTime": "19:55",
+          "name": "Initiation au Muay Thai",
+          "description": "Muay Thai",
+          "ageGroup": "7 ans et plus",
+          "discipline": "muaythai",
+          "duration": "45 min"
+        },
+        {
+          "id": "c6",
+          "time": "20:00 - 21:00",
+          "startTime": "20:00",
+          "endTime": "21:00",
+          "name": "Muay Thai adulte",
+          "description": "Muay Thai",
+          "ageGroup": "Adultes",
+          "discipline": "muaythai",
+          "duration": "1h"
+        }
+      ]
+    },
+    {
+      "day": "Mardi",
+      "dayShort": "Mar",
+      "dayIndex": 2,
+      "classes": [
+        {
+          "id": "c7",
+          "time": "17:45 - 18:40",
+          "startTime": "17:45",
+          "endTime": "18:40",
+          "name": "Enfants intermédiaire",
+          "description": "Jiu-Jitsu d'autodéfense",
+          "ageGroup": "8 à 10 ans",
+          "discipline": "jiujitsu",
+          "duration": "55 min"
+        },
+        {
+          "id": "c8",
+          "time": "18:45 - 19:45",
+          "startTime": "18:45",
+          "endTime": "19:45",
+          "name": "Enfants, ados débutants et adultes",
+          "description": "Jiu-Jitsu d'autodéfense",
+          "ageGroup": "11 ans et plus",
+          "discipline": "jiujitsu",
+          "duration": "1h"
+        }
+      ]
+    },
+    {
+      "day": "Mercredi",
+      "dayShort": "Mer",
+      "dayIndex": 3,
+      "classes": [
+        {
+          "id": "c9",
+          "time": "19:30 - 21:00",
+          "startTime": "19:30",
+          "endTime": "21:00",
+          "name": "Muay Thai adulte",
+          "description": "Muay Thai",
+          "ageGroup": "Adultes",
+          "discipline": "muaythai",
+          "duration": "1h30"
+        }
+      ]
+    },
+    {
+      "day": "Jeudi",
+      "dayShort": "Jeu",
+      "dayIndex": 4,
+      "classes": [
+        {
+          "id": "c10",
+          "time": "17:45 - 18:25",
+          "startTime": "17:45",
+          "endTime": "18:25",
+          "name": "Superkid parent-enfants & Enfants débutants",
+          "description": "Jiu-Jitsu d'autodéfense",
+          "ageGroup": "5 à 8 ans",
+          "discipline": "superkids",
+          "duration": "40 min"
+        },
+        {
+          "id": "c11",
+          "time": "18:30 - 19:25",
+          "startTime": "18:30",
+          "endTime": "19:25",
+          "name": "Groupe avancé enfant / Ados",
+          "description": "Jiu-Jitsu — Ceinture grise et plus",
+          "ageGroup": "7 ans et plus",
+          "discipline": "jiujitsu",
+          "duration": "55 min"
+        },
+        {
+          "id": "c12",
+          "time": "19:30 - 21:00",
+          "startTime": "19:30",
+          "endTime": "21:00",
+          "name": "Adultes",
+          "description": "Gracie Jiu-Jitsu focus",
+          "ageGroup": "16 ans et plus",
+          "discipline": "gracie",
+          "duration": "1h30"
+        }
+      ]
+    },
+    {
+      "day": "Vendredi",
+      "dayShort": "Ven",
+      "dayIndex": 5,
+      "classes": []
+    },
+    {
+      "day": "Samedi",
+      "dayShort": "Sam",
+      "dayIndex": 6,
+      "classes": []
+    }
+  ]
+}

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horaire des cours — Académie d'Arts Martiaux Familial</title>
+  <meta name="description" content="Consultez l'horaire des cours de Jiu-Jitsu d'autodéfense, Muay Thai et Programme Superkids à l'Académie d'Arts Martiaux Familial. Cours pour enfants, ados et adultes à Montréal.">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts — Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            gold: { DEFAULT: '#c9a227', light: '#e6c84e' },
+            dark: { DEFAULT: '#0f0f1a', card: '#16213e', secondary: '#1a1a2e' },
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="font-sans antialiased">
+
+  <!-- Skip navigation -->
+  <a href="#horaire" class="skip-link">Aller au contenu de l'horaire</a>
+
+  <!-- ============================================================
+       HERO / HEADER
+       ============================================================ -->
+  <header class="hero-gradient relative overflow-hidden" role="banner">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+
+      <div class="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+
+        <!-- Text content -->
+        <div class="flex-1 text-center lg:text-left">
+          <h1 class="hero-title text-4xl sm:text-5xl lg:text-6xl font-black leading-tight tracking-tight">
+            Académie d'Arts<br>Martiaux Familial
+          </h1>
+          <div class="hero-accent-line mt-4 mx-auto lg:mx-0"></div>
+          <p class="mt-5 text-xl sm:text-2xl text-gray-300 font-medium">
+            Horaire des cours — <span id="session-name">chargement…</span>
+          </p>
+          <p class="mt-1 text-sm text-gray-500" id="last-updated"></p>
+
+          <!-- Legend -->
+          <div id="schedule-legend"
+               class="mt-5 flex flex-wrap gap-4 justify-center lg:justify-start"
+               role="list"
+               aria-label="Légende des disciplines">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Print button -->
+          <button
+            onclick="window.print()"
+            class="no-print mt-5 text-sm text-gray-500 hover:text-yellow-400 transition-colors underline underline-offset-4"
+            aria-label="Imprimer l'horaire">
+            Imprimer l'horaire
+          </button>
+        </div>
+
+        <!-- Logo -->
+        <div class="no-print shrink-0">
+          <img src="logo.png"
+               alt="Logo de l'Académie d'Arts Martiaux Familial"
+               class="w-40 h-40 lg:w-56 lg:h-56 object-contain drop-shadow-lg"
+               loading="eager" />
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+
+  <!-- ============================================================
+       ANNOUNCEMENT BANNER
+       ============================================================ -->
+  <div id="announcement-section" class="max-w-6xl mx-auto px-4 sm:px-6 pt-5 no-print" aria-live="polite">
+    <!-- Populated by JS if announcements exist -->
+  </div>
+
+
+  <!-- ============================================================
+       MAIN SCHEDULE SECTION
+       ============================================================ -->
+  <main id="horaire" class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12" aria-label="Horaire des cours">
+
+    <!-- Toolbar: view toggle + countdown + filters -->
+    <div class="no-print mb-6 flex flex-col gap-4">
+
+      <!-- Row 1: Toggle + Countdown -->
+      <div class="flex flex-wrap items-center gap-4 justify-between">
+
+        <!-- View Toggle -->
+        <nav class="view-toggle" aria-label="Choisir la vue de l'horaire">
+          <button
+            id="btn-semaine"
+            class="view-btn active"
+            data-view="semaine"
+            aria-pressed="true"
+            aria-label="Vue semaine">
+            Semaine
+          </button>
+          <button
+            id="btn-jour"
+            class="view-btn"
+            data-view="jour"
+            aria-pressed="false"
+            aria-label="Vue jour">
+            Jour
+          </button>
+          <button
+            id="btn-mois"
+            class="view-btn"
+            data-view="mois"
+            aria-pressed="false"
+            aria-label="Vue mois">
+            Mois
+          </button>
+          <button
+            id="btn-session"
+            class="view-btn"
+            data-view="session"
+            aria-pressed="false"
+            aria-label="Vue session">
+            Session
+          </button>
+        </nav>
+
+        <!-- Countdown -->
+        <div id="countdown-bar" class="countdown-bar" role="status" aria-live="polite" aria-label="Prochain cours">
+          <span class="cd-dot" aria-hidden="true"></span>
+          <span class="cd-label">Prochain cours :</span>
+          <span class="cd-value" id="countdown-value">chargement…</span>
+        </div>
+
+      </div>
+
+      <!-- Row 2: Discipline filters -->
+      <div class="flex flex-wrap gap-2" role="group" aria-label="Filtrer par discipline">
+        <button class="filter-btn" data-discipline="jiujitsu"  aria-pressed="true"  aria-label="Afficher Jiu-Jitsu d'autodéfense">
+          <span class="filter-dot" aria-hidden="true"></span>
+          Jiu-Jitsu
+        </button>
+        <button class="filter-btn" data-discipline="muaythai"  aria-pressed="true"  aria-label="Afficher Muay Thai">
+          <span class="filter-dot" aria-hidden="true"></span>
+          Muay Thai
+        </button>
+        <button class="filter-btn" data-discipline="superkids" aria-pressed="true"  aria-label="Afficher Programme Superkids">
+          <span class="filter-dot" aria-hidden="true"></span>
+          Superkids
+        </button>
+        <button class="filter-btn" data-discipline="gracie"   aria-pressed="true"  aria-label="Afficher Gracie Jiu-Jitsu">
+          <span class="filter-dot" aria-hidden="true"></span>
+          Gracie
+        </button>
+      </div>
+
+    </div><!-- /toolbar -->
+
+
+    <!-- ---- VUE SEMAINE ---- -->
+    <section
+      id="view-semaine"
+      aria-label="Vue semaine de l'horaire"
+      role="region">
+      <!-- Populated by JS -->
+    </section>
+
+
+    <!-- ---- VUE JOUR ---- -->
+    <section
+      id="view-jour"
+      class="hidden"
+      aria-label="Vue jour de l'horaire"
+      role="region">
+
+      <!-- Day navigation header -->
+      <div class="day-nav mb-6 no-print" aria-label="Navigation entre les jours">
+        <button id="day-prev" class="day-nav-btn" aria-label="Jour précédent">&#8249;</button>
+        <div class="day-title-block" id="day-title">
+          <!-- Day name + date populated by JS -->
+        </div>
+        <button id="day-next" class="day-nav-btn" aria-label="Jour suivant">&#8250;</button>
+      </div>
+
+      <!-- Day title shown in print -->
+      <div id="day-title-print" class="hidden print:block mb-4">
+        <!-- same info, print-only -->
+      </div>
+
+      <!-- Course list for the selected day -->
+      <div id="day-classes" role="list" aria-label="Cours du jour" class="flex flex-col gap-4">
+        <!-- Populated by JS -->
+      </div>
+
+    </section>
+
+
+    <!-- ---- VUE MOIS ---- -->
+    <section
+      id="view-mois"
+      class="hidden"
+      aria-label="Vue mensuelle de l'horaire"
+      role="region">
+
+      <!-- Month navigation -->
+      <div class="month-nav no-print" aria-label="Navigation entre les mois">
+        <button id="month-prev" class="day-nav-btn" aria-label="Mois précédent">&#8249;</button>
+        <div class="month-title-block" id="month-title">
+          <!-- Month name + year populated by JS -->
+        </div>
+        <button id="month-next" class="day-nav-btn" aria-label="Mois suivant">&#8250;</button>
+      </div>
+
+      <!-- Calendar grid -->
+      <div id="month-calendar" class="month-calendar-wrapper" aria-label="Calendrier mensuel">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Day detail panel -->
+      <div id="month-day-detail" class="month-day-detail" aria-label="Cours du jour sélectionné" aria-live="polite">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Legend -->
+      <div class="month-legend no-print" role="list" aria-label="Légende du calendrier">
+        <div class="month-legend-item" role="listitem">
+          <span class="month-legend-dot" style="background:var(--cyan); border:2px solid var(--cyan);"></span>
+          <span>Cours</span>
+        </div>
+        <div class="month-legend-item" role="listitem">
+          <span class="month-legend-ring" style="border-color:var(--red);"></span>
+          <span>Congé</span>
+        </div>
+        <div class="month-legend-item" role="listitem">
+          <span class="month-legend-star" aria-hidden="true">&#9733;</span>
+          <span>Événement spécial</span>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ---- VUE SESSION ---- -->
+    <section
+      id="view-session"
+      class="hidden"
+      aria-label="Vue session — aperçu de la session"
+      role="region">
+
+      <!-- Session header -->
+      <div class="session-header" id="session-view-header">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Stats row -->
+      <div class="session-stats-row" id="session-stats" role="list" aria-label="Statistiques de la session">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Timeline des événements -->
+      <div class="session-section">
+        <h2 class="session-section-title">Timeline des événements</h2>
+        <div id="session-timeline" class="session-timeline" role="list" aria-label="Événements de la session">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Répartition par groupes -->
+      <div class="session-section">
+        <h2 class="session-section-title">Répartition par groupes</h2>
+        <div id="session-groups" class="session-groups" role="list" aria-label="Groupes par discipline">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ============================================================
+       CONTACT SECTION
+       ============================================================ -->
+  <section id="contact" class="border-t border-gray-800" aria-label="Informations de contact">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16 text-center">
+
+      <h2 class="text-2xl sm:text-3xl font-bold text-white mb-2">Informations et inscriptions</h2>
+      <p class="text-gray-400 mb-8 max-w-lg mx-auto">
+        Vous avez des questions sur nos programmes ou souhaitez inscrire votre famille? Nous serions ravis de vous accueillir!
+      </p>
+
+      <div class="space-y-4 mb-8">
+        <p class="text-lg">
+          <a href="mailto:info@academie-amf.com"
+             class="hover:text-yellow-400 transition-colors font-semibold underline underline-offset-4"
+             style="color: var(--gold-light);"
+             aria-label="Envoyer un courriel à info@academie-amf.com">
+            info@academie-amf.com
+          </a>
+        </p>
+        <div id="contact-phone" class="hidden">
+          <a id="contact-phone-link"
+             href="#"
+             class="text-gray-400 hover:text-white transition-colors">
+          </a>
+        </div>
+        <div id="contact-address" class="hidden">
+          <p id="contact-address-text" class="text-gray-400 text-sm mt-1"></p>
+        </div>
+      </div>
+
+      <a href="mailto:info@academie-amf.com" class="cta-button text-base" aria-label="Envoyer un courriel pour nous contacter">
+        Nous contacter
+      </a>
+
+    </div>
+  </section>
+
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer class="border-t border-gray-800/50 py-6" role="contentinfo">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+      <p class="text-sm text-gray-600">
+        &copy; 2026 Académie d'Arts Martiaux Familial &mdash;
+        <a href="https://academie-amf.com"
+           class="hover:text-gray-400 transition-colors"
+           target="_blank"
+           rel="noopener noreferrer"
+           aria-label="Site web de l'Académie d'Arts Martiaux Familial (nouvel onglet)">
+          academie-amf.com
+        </a>
+      </p>
+    </div>
+  </footer>
+
+
+  <!-- Schedule App -->
+  <script src="app.js"></script>
+
+</body>
+</html>
