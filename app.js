@@ -281,6 +281,7 @@
       holidays: sessHolidays.map(h => ({
         id: h.id,
         date: h.date,
+        endDate: h.end_date || undefined,
         name: h.label || '',
       })),
       events: sessEvents.map(e => ({

@@ -672,7 +672,7 @@ async function saveHoliday() {
 
   // Persist to Supabase
   try {
-    const row = { session_id: currentSessionId, date, label: name };
+    const row = { session_id: currentSessionId, date, end_date: endDate || null, label: name };
     if (id) {
       await sbRequest('schedule_holidays', 'PATCH', row, `?id=eq.${encodeURIComponent(id)}`);
     } else {
