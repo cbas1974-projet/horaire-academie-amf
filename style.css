@@ -793,6 +793,29 @@ body {
   box-shadow: 0 4px 16px rgba(201, 162, 39, 0.3);
 }
 
+/* Copy-email toast */
+.email-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--gold);
+  color: var(--bg-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 9999;
+  pointer-events: none;
+}
+.email-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 /* ============================================================
    PRINT STYLES
    ============================================================ */

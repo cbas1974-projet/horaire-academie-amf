@@ -1693,10 +1693,43 @@
     }
   }
 
+  /* ============================================================
+     MAILTO FALLBACK — copy email to clipboard if no handler
+     ============================================================ */
+
+  function setupMailtoFallback() {
+    document.querySelectorAll('a[href^="mailto:"]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const email = link.href.replace('mailto:', '');
+        // Copy to clipboard
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(email).then(() => {
+            showEmailToast('Adresse copiée : ' + email);
+          });
+        }
+        // Let the browser also try mailto: (don't preventDefault)
+      });
+    });
+  }
+
+  function showEmailToast(msg) {
+    let toast = document.querySelector('.email-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.className = 'email-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => { init(); setupMailtoFallback(); });
   } else {
     init();
+    setupMailtoFallback();
   }
 
 })();
