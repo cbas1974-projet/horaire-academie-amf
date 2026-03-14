@@ -420,6 +420,47 @@
   }
 
   /* ============================================================
+     UPCOMING HOLIDAYS BANNER
+     ============================================================ */
+
+  function renderUpcomingHolidays(holidays) {
+    const section = document.getElementById('announcement-section');
+    if (!section || !holidays || !holidays.length) return;
+
+    const todayYMD = toYMD(new Date());
+
+    // Filter: upcoming or ongoing holidays
+    const upcoming = holidays
+      .filter(h => {
+        const end = h.endDate || h.date;
+        return end >= todayYMD;
+      })
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 3);
+
+    if (!upcoming.length) return;
+
+    const formatShort = (d) => {
+      if (!d) return '';
+      const dt = new Date(d + 'T00:00:00');
+      return dt.toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' });
+    };
+
+    const holidaysHtml = upcoming.map(h => {
+      const dateLabel = h.endDate && h.endDate !== h.date
+        ? `${formatShort(h.date)} au ${formatShort(h.endDate)}`
+        : formatShort(h.date);
+      return `
+        <div class="announcement-bar mb-2" role="status" style="background:rgba(220,38,38,0.08);border-color:rgba(220,38,38,0.25);">
+          <span class="ann-icon" aria-hidden="true">🚫</span>
+          <span><strong>Congé</strong> — ${dateLabel}${h.name ? ' — ' + esc(h.name) : ''}</span>
+        </div>`;
+    }).join('');
+
+    section.insertAdjacentHTML('beforeend', holidaysHtml);
+  }
+
+  /* ============================================================
      LEGEND
      ============================================================ */
 
@@ -1660,6 +1701,7 @@
       renderLegend(data.disciplines);
       renderAnnouncements(data.announcements || []);
       renderUpcomingEvents(data.events || [], data.sessionStart, data.sessionEnd);
+      renderUpcomingHolidays(data.holidays || []);
 
       // Set initial day index for jour view
       currentDayIdx = findDefaultDayIdx(data.schedule);
