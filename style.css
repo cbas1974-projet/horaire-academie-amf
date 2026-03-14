@@ -907,6 +907,35 @@ body {
    VUE MOIS — MONTHLY CALENDAR
    ============================================================ */
 
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.week-title-block {
+  flex: 1;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+
+.week-title-block .week-title-month {
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.week-title-block .week-title-range {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-top: 0.15rem;
+}
+
 .month-nav {
   display: flex;
   align-items: center;
@@ -1269,6 +1298,19 @@ body {
   color: var(--text-muted);
 }
 
+.session-date-ranges {
+  margin-top: 0.25rem;
+}
+
+.session-date-range-item {
+  margin-bottom: 0.15rem;
+}
+
+.session-date-range-item strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
 /* Stats row */
 .session-stats-row {
   display: grid;
@@ -1508,3 +1550,71 @@ body {
   font-style: italic;
   font-size: 0.875rem;
 }
+
+/* ---- Discipline logo circles ---- */
+
+.disc-logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-card);
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.disc-logo.jiujitsu  { border-color: var(--gold); }
+.disc-logo.muaythai  { border-color: var(--red); }
+.disc-logo.superkids { border-color: var(--cyan); }
+.disc-logo.gracie    { border-color: var(--royal); }
+
+/* Week view — logo as centered watermark */
+.week-block-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 75%;
+  max-width: 48px;
+  max-height: 80%;
+  object-fit: contain;
+  opacity: 0.22;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: grayscale(0.3) brightness(1.5);
+}
+
+/* Day view card — logo next to title */
+.dc-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.dc-logo.jiujitsu  { border: 2px solid var(--gold); }
+.dc-logo.muaythai  { border: 2px solid var(--red); }
+.dc-logo.superkids { border: 2px solid var(--cyan); }
+.dc-logo.gracie    { border: 2px solid var(--royal); }
+
+.day-card-v2 .dc-logo {
+  align-self: center;
+  margin-left: 0.75rem;
+}
+
+/* Month detail — logo */
+.month-detail-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.month-detail-logo.jiujitsu  { border: 2px solid var(--gold); }
+.month-detail-logo.muaythai  { border: 2px solid var(--red); }
+.month-detail-logo.superkids { border: 2px solid var(--cyan); }
+.month-detail-logo.gracie    { border: 2px solid var(--royal); }

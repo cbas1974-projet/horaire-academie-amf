@@ -66,6 +66,9 @@
             </button>
           </div>
 
+          <!-- Date ranges per discipline -->
+          <div id="session-date-ranges-header" class="mt-2 flex flex-col items-center lg:items-start gap-0.5"></div>
+
           <!-- Legend -->
           <div id="schedule-legend"
                class="mt-3 flex flex-wrap gap-4 justify-center lg:justify-start"
@@ -180,7 +183,18 @@
       id="view-semaine"
       aria-label="Vue semaine de l'horaire"
       role="region">
-      <!-- Populated by JS -->
+
+      <!-- Week navigation header -->
+      <div class="week-nav no-print" aria-label="Navigation entre les semaines">
+        <button id="week-prev" class="day-nav-btn" aria-label="Semaine précédente">&#8249;</button>
+        <div class="week-title-block" id="week-title">
+          <!-- Week range populated by JS -->
+        </div>
+        <button id="week-next" class="day-nav-btn" aria-label="Semaine suivante">&#8250;</button>
+      </div>
+
+      <!-- Week grid populated by JS -->
+      <div id="week-grid-container"></div>
     </section>
 
 
@@ -353,6 +367,9 @@
     </div>
   </footer>
 
+
+  <!-- Supabase CDN (public read-only) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Schedule App -->
   <script src="app.js"></script>

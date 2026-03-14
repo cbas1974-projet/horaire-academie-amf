@@ -8,6 +8,44 @@
 // Password is "amf2026admin" — hash computed at runtime via Web Crypto API
 // Change the literal in getExpectedHash() to update the password.
 
+// URL Junior Combative — update when deployed
+const JUNIOR_COMBATIVE_URL = 'http://localhost:5173';
+
+// ── Supabase Config ──────────────────────────────────────────
+const SUPABASE_URL  = 'https://enkwnelkwlvlyjvbwyzq.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVua3duZWxrd2x2bHlqdmJ3eXpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzU1MjgsImV4cCI6MjA4NDYxMTUyOH0.SzvyfEQGjfav927--cYQZVF8jJ47B6V9jHrNh6KuT6M';
+
+let currentSessionId = null; // set on load
+
+async function sbRequest(table, method, body, query = '') {
+  const url = `${SUPABASE_URL}/rest/v1/${table}${query}`;
+  const headers = {
+    'apikey': SUPABASE_ANON,
+    'Authorization': `Bearer ${SUPABASE_ANON}`,
+    'Content-Type': 'application/json',
+    'Accept-Profile': 'dojo',
+    'Content-Profile': 'dojo',
+  };
+  if (method === 'POST') {
+    headers['Prefer'] = 'resolution=merge-duplicates,return=representation';
+  } else if (method === 'PATCH') {
+    headers['Prefer'] = 'return=representation';
+  } else if (method === 'DELETE') {
+    headers['Prefer'] = 'return=minimal';
+  }
+  const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${method} ${table}: ${res.status} — ${text}`);
+  }
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('json') ? res.json() : null;
+}
+
+async function sbGet(table, query) {
+  return sbRequest(table, 'GET', null, `?${query}`);
+}
+
 const DISCIPLINES = {
   jiujitsu:  { label: "Jiu-Jitsu d'autodéfense", color: '#c9a227' },
   muaythai:  { label: 'Muay Thai',               color: '#dc2626' },
@@ -41,6 +79,7 @@ const DEFAULT_SCHEDULE_DAYS = [
 // ── App State ────────────────────────────────────────────────
 
 let data = null;
+let dateRanges = []; // schedule_date_ranges from Supabase
 let hasUnsavedChanges = false;
 let toastTimer = null;
 
@@ -85,16 +124,110 @@ async function handleLogin() {
 
 async function loadData() {
   try {
-    const res = await fetch('schedule.json', { cache: 'no-store' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const json = await res.json();
-    data = normalizeData(json);
-    showToast('Horaire chargé depuis schedule.json', 'success');
-  } catch {
-    data = getEmptyData();
-    showToast('Démarrage en mode vide — importez un JSON ou créez l\'horaire', 'warning');
+    data = await loadFromSupabase();
+    showToast('Horaire chargé depuis Supabase', 'success');
+  } catch (err) {
+    console.warn('Supabase load failed:', err.message);
+    try {
+      const res = await fetch('schedule.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      data = normalizeData(await res.json());
+      showToast('Horaire chargé depuis schedule.json (Supabase indisponible)', 'warning');
+    } catch {
+      data = getEmptyData();
+      showToast('Démarrage en mode vide — importez un JSON ou créez l\'horaire', 'warning');
+    }
   }
   renderAll();
+}
+
+async function loadFromSupabase() {
+  const [sessions, courses, holidays, events, announcements] = await Promise.all([
+    sbGet('schedule_sessions', 'is_current=eq.true&limit=1'),
+    sbGet('schedule_courses', 'is_active=eq.true&order=day_index,sort_order'),
+    sbGet('schedule_holidays', 'select=*'),
+    sbGet('schedule_events', 'select=*'),
+    sbGet('schedule_announcements', 'select=*'),
+  ]);
+  // Fetch date ranges separately — table may not exist yet (pre-migration)
+  let ranges = [];
+  try { ranges = await sbGet('schedule_date_ranges', 'select=*&order=sort_order'); } catch { }
+
+  const session = sessions[0];
+  if (!session) throw new Error('No current session');
+  currentSessionId = session.id;
+
+  const sid = session.id;
+  const sessHolidays = holidays.filter(h => h.session_id === sid);
+  const sessEvents = events.filter(e => e.session_id === sid);
+  const sessAnn = announcements.filter(a => a.session_id === sid);
+
+  // Store date ranges globally
+  dateRanges = (ranges || []).filter(r => r.session_id === sid).map(r => ({
+    id: r.id,
+    name: r.name,
+    startDate: r.start_date,
+    endDate: r.end_date,
+    sortOrder: r.sort_order || 0,
+  }));
+
+  const dayNames = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const dayShorts = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  const schedule = dayNames.map((day, i) => ({
+    day,
+    dayShort: dayShorts[i],
+    dayIndex: i,
+    classes: courses
+      .filter(c => c.day_index === i)
+      .map(c => ({
+        id: c.id,
+        time: `${c.start_time} - ${c.end_time}`,
+        startTime: c.start_time,
+        endTime: c.end_time,
+        name: c.name,
+        description: c.description || '',
+        ageGroup: c.age_group || '',
+        discipline: c.discipline,
+        duration: calcDuration(c.start_time, c.end_time),
+        dateRangeId: c.date_range_id || '',
+      })),
+  }));
+
+  return {
+    academy: 'Académie d\'Arts Martiaux Familial',
+    session: session.name,
+    sessionStart: session.start_date,
+    sessionEnd: session.end_date,
+    updated: today(),
+    contact: {
+      email: 'info@academie-amf.com',
+      phone: '',
+      address: '129 avenue Principale, Rouyn-Noranda (Québec) J9X 4P3 — Sous-sol, 3e studio',
+    },
+    announcements: sessAnn.map(a => ({
+      id: a.id,
+      text: a.title,
+      type: a.type || 'info',
+      active: a.is_active !== false,
+    })),
+    disciplines: { ...DISCIPLINES },
+    holidays: sessHolidays.map(h => ({
+      id: h.id,
+      date: h.date,
+      endDate: h.end_date || undefined,
+      name: h.label || '',
+    })),
+    events: sessEvents.map(e => ({
+      id: e.id,
+      date: e.date,
+      endDate: e.end_date || undefined,
+      name: e.title,
+      description: e.description || '',
+      type: e.event_type || 'autre',
+      important: e.importance === 'high',
+    })),
+    schedule,
+  };
 }
 
 function normalizeData(json) {
@@ -200,6 +333,7 @@ function renderAll() {
   renderEvents();
   renderParams();
   renderAnnouncements();
+  renderDateRanges();
 }
 
 // ── SCHEDULE (Tab 1) ─────────────────────────────────────────
@@ -326,13 +460,21 @@ function findCourse(dayIndex, id) {
   return day ? (day.classes || []).find(c => c.id === id) : null;
 }
 
-function deleteCourse(dayIndex, id) {
+async function deleteCourse(dayIndex, id) {
   const day = data.schedule.find(d => d.dayIndex === dayIndex);
   if (!day) return;
   day.classes = (day.classes || []).filter(c => c.id !== id);
-  markUnsaved();
   renderSchedule();
-  showToast('Cours supprimé', 'success');
+
+  try {
+    await sbRequest('schedule_courses', 'DELETE', null, `?id=eq.${encodeURIComponent(id)}`);
+    showToast('Cours supprimé', 'success');
+    markSaved();
+  } catch (err) {
+    console.error('Supabase delete failed:', err);
+    showToast('Supprimé localement (erreur Supabase)', 'warning');
+    markUnsaved();
+  }
 }
 
 // ── Course Modal ─────────────────────────────────────────────
@@ -349,6 +491,15 @@ function openCourseModal(cls, dayIndex) {
   document.getElementById('courseAgeGroup').value    = cls ? cls.ageGroup    : '';
   document.getElementById('courseDiscipline').value  = cls ? cls.discipline  : '';
   document.getElementById('courseDuration').value    = cls ? cls.duration    : '';
+
+  // Populate date range dropdown
+  const drSelect = document.getElementById('courseDateRange');
+  drSelect.innerHTML = '<option value="">— Session principale —</option>';
+  for (const dr of dateRanges) {
+    drSelect.innerHTML += `<option value="${escHtml(dr.id)}">${escHtml(dr.name)} (${formatDate(dr.startDate)} – ${formatDate(dr.endDate)})</option>`;
+  }
+  drSelect.value = cls ? (cls.dateRangeId || '') : '';
+
   updateDurationDisplay();
   modal.classList.remove('hidden');
   document.getElementById('courseName').focus();
@@ -375,15 +526,16 @@ function calcDuration(start, end) {
   return `${diff} min`;
 }
 
-function saveCourse() {
-  const name       = document.getElementById('courseName').value.trim();
-  const startTime  = document.getElementById('courseStartTime').value;
-  const endTime    = document.getElementById('courseEndTime').value;
-  const desc       = document.getElementById('courseDescription').value.trim();
-  const ageGroup   = document.getElementById('courseAgeGroup').value.trim();
-  const discipline = document.getElementById('courseDiscipline').value;
-  const dayIndex   = parseInt(document.getElementById('courseDayIndex').value, 10);
-  const id         = document.getElementById('courseId').value;
+async function saveCourse() {
+  const name        = document.getElementById('courseName').value.trim();
+  const startTime   = document.getElementById('courseStartTime').value;
+  const endTime     = document.getElementById('courseEndTime').value;
+  const desc        = document.getElementById('courseDescription').value.trim();
+  const ageGroup    = document.getElementById('courseAgeGroup').value.trim();
+  const discipline  = document.getElementById('courseDiscipline').value;
+  const dateRangeId = document.getElementById('courseDateRange').value;
+  const dayIndex    = parseInt(document.getElementById('courseDayIndex').value, 10);
+  const id          = document.getElementById('courseId').value;
 
   if (!name)       { showToast('Le nom du cours est requis.', 'error'); return; }
   if (!startTime)  { showToast('L\'heure de début est requise.', 'error'); return; }
@@ -392,27 +544,47 @@ function saveCourse() {
 
   const duration = calcDuration(startTime, endTime);
   const time     = `${startTime} - ${endTime}`;
+  const dayNames = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 
   const day = data.schedule.find(d => d.dayIndex === dayIndex);
   if (!day) return;
 
+  const courseId = id || ('c' + Date.now());
+  const localCourse = { id: courseId, time, startTime, endTime, name, description: desc, ageGroup, discipline, duration, dateRangeId };
+
   if (id) {
-    // Update existing
     const idx = day.classes.findIndex(c => c.id === id);
-    if (idx !== -1) {
-      day.classes[idx] = { id, time, startTime, endTime, name, description: desc, ageGroup, discipline, duration };
-    }
-    showToast('Cours mis à jour', 'success');
+    if (idx !== -1) day.classes[idx] = localCourse;
   } else {
-    // New
-    const newId = 'c' + Date.now();
-    day.classes.push({ id: newId, time, startTime, endTime, name, description: desc, ageGroup, discipline, duration });
-    showToast('Cours ajouté', 'success');
+    day.classes.push(localCourse);
   }
 
-  markUnsaved();
   closeCourseModal();
   renderSchedule();
+
+  // Persist to Supabase
+  try {
+    await sbRequest('schedule_courses', 'POST', [{
+      id: courseId,
+      day: dayNames[dayIndex],
+      day_index: dayIndex,
+      start_time: startTime,
+      end_time: endTime,
+      name,
+      description: desc,
+      age_group: ageGroup,
+      discipline,
+      date_range_id: dateRangeId || null,
+      is_active: true,
+      sort_order: day.classes.length - 1,
+    }]);
+    showToast(id ? 'Cours mis à jour' : 'Cours ajouté', 'success');
+    markSaved();
+  } catch (err) {
+    console.error('Supabase save failed:', err);
+    showToast('Sauvegardé localement (erreur Supabase)', 'warning');
+    markUnsaved();
+  }
 }
 
 // ── HOLIDAYS (Tab 2) ─────────────────────────────────────────
@@ -443,12 +615,20 @@ function renderHolidays() {
     });
   });
   tbody.querySelectorAll('.delete-holiday-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       if (confirm('Êtes-vous sûr de vouloir supprimer ce congé ?')) {
-        data.holidays = data.holidays.filter(x => x.id !== btn.dataset.id);
-        markUnsaved();
+        const hid = btn.dataset.id;
+        data.holidays = data.holidays.filter(x => x.id !== hid);
         renderHolidays();
-        showToast('Congé supprimé', 'success');
+        try {
+          await sbRequest('schedule_holidays', 'DELETE', null, `?id=eq.${encodeURIComponent(hid)}`);
+          showToast('Congé supprimé', 'success');
+          markSaved();
+        } catch (err) {
+          console.error('Supabase delete failed:', err);
+          showToast('Supprimé localement (erreur Supabase)', 'warning');
+          markUnsaved();
+        }
       }
     });
   });
@@ -468,7 +648,7 @@ function closeHolidayModal() {
   document.getElementById('holidayModal').classList.add('hidden');
 }
 
-function saveHoliday() {
+async function saveHoliday() {
   const id      = document.getElementById('holidayId').value;
   const date    = document.getElementById('holidayDate').value;
   const endDate = document.getElementById('holidayEndDate').value;
@@ -483,15 +663,33 @@ function saveHoliday() {
   if (id) {
     const idx = data.holidays.findIndex(h => h.id === id);
     if (idx !== -1) data.holidays[idx] = entry;
-    showToast('Congé mis à jour', 'success');
   } else {
     data.holidays.push(entry);
-    showToast('Congé ajouté', 'success');
   }
 
-  markUnsaved();
   closeHolidayModal();
   renderHolidays();
+
+  // Persist to Supabase
+  try {
+    const row = { session_id: currentSessionId, date, label: name };
+    if (id) {
+      await sbRequest('schedule_holidays', 'PATCH', row, `?id=eq.${encodeURIComponent(id)}`);
+    } else {
+      const result = await sbRequest('schedule_holidays', 'POST', [row]);
+      if (result && result[0]) {
+        // Update local ID with Supabase UUID
+        const localEntry = data.holidays[data.holidays.length - 1];
+        localEntry.id = result[0].id;
+      }
+    }
+    showToast(id ? 'Congé mis à jour' : 'Congé ajouté', 'success');
+    markSaved();
+  } catch (err) {
+    console.error('Supabase save failed:', err);
+    showToast('Sauvegardé localement (erreur Supabase)', 'warning');
+    markUnsaved();
+  }
 }
 
 // ── EVENTS (Tab 3) ───────────────────────────────────────────
@@ -503,9 +701,13 @@ function renderEvents() {
     return;
   }
   const sorted = [...data.events].sort((a, b) => a.date.localeCompare(b.date));
-  tbody.innerHTML = sorted.map(e => `
+  tbody.innerHTML = sorted.map(e => {
+    const dateDisplay = e.endDate && e.endDate !== e.date
+      ? `${formatDate(e.date)} → ${formatDate(e.endDate)}`
+      : formatDate(e.date);
+    return `
     <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-      <td class="px-4 py-3 text-gray-700 whitespace-nowrap">${formatDate(e.date)}</td>
+      <td class="px-4 py-3 text-gray-700 whitespace-nowrap">${dateDisplay}</td>
       <td class="px-4 py-3 font-medium text-gray-900">${escHtml(e.name)}</td>
       <td class="px-4 py-3 text-gray-600 text-xs">${escHtml(EVENT_TYPE_LABELS[e.type] || e.type)}</td>
       <td class="px-4 py-3">
@@ -515,8 +717,8 @@ function renderEvents() {
         <button class="edit-event-btn text-blue-600 hover:text-blue-800 text-xs font-semibold mr-2" data-id="${escHtml(e.id)}">Modifier</button>
         <button class="delete-event-btn text-red-500 hover:text-red-700 text-xs font-semibold" data-id="${escHtml(e.id)}">Supprimer</button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 
   tbody.querySelectorAll('.edit-event-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -525,12 +727,20 @@ function renderEvents() {
     });
   });
   tbody.querySelectorAll('.delete-event-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       if (confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
-        data.events = data.events.filter(x => x.id !== btn.dataset.id);
-        markUnsaved();
+        const eid = btn.dataset.id;
+        data.events = data.events.filter(x => x.id !== eid);
         renderEvents();
-        showToast('Événement supprimé', 'success');
+        try {
+          await sbRequest('schedule_events', 'DELETE', null, `?id=eq.${encodeURIComponent(eid)}`);
+          showToast('Événement supprimé', 'success');
+          markSaved();
+        } catch (err) {
+          console.error('Supabase delete failed:', err);
+          showToast('Supprimé localement (erreur Supabase)', 'warning');
+          markUnsaved();
+        }
       }
     });
   });
@@ -540,6 +750,7 @@ function openEventModal(ev) {
   document.getElementById('eventModalTitle').textContent = ev ? 'Modifier l\'événement' : 'Ajouter un événement';
   document.getElementById('eventId').value          = ev ? ev.id          : '';
   document.getElementById('eventDate').value        = ev ? ev.date        : '';
+  document.getElementById('eventEndDate').value     = ev ? (ev.endDate || '') : '';
   document.getElementById('eventName').value        = ev ? ev.name        : '';
   document.getElementById('eventDescription').value = ev ? (ev.description || '') : '';
   document.getElementById('eventType').value        = ev ? (ev.type || 'autre') : 'autre';
@@ -552,31 +763,58 @@ function closeEventModal() {
   document.getElementById('eventModal').classList.add('hidden');
 }
 
-function saveEvent() {
+async function saveEvent() {
   const id          = document.getElementById('eventId').value;
   const date        = document.getElementById('eventDate').value;
+  const endDate     = document.getElementById('eventEndDate').value;
   const name        = document.getElementById('eventName').value.trim();
   const description = document.getElementById('eventDescription').value.trim();
   const type        = document.getElementById('eventType').value;
   const important   = document.getElementById('eventImportant').checked;
 
-  if (!date) { showToast('La date est requise.', 'error'); return; }
+  if (!date) { showToast('La date de début est requise.', 'error'); return; }
   if (!name) { showToast('Le nom est requis.', 'error'); return; }
 
   const entry = { id: id || ('e' + Date.now()), date, name, description, type, important };
+  if (endDate) entry.endDate = endDate;
 
   if (id) {
     const idx = data.events.findIndex(e => e.id === id);
     if (idx !== -1) data.events[idx] = entry;
-    showToast('Événement mis à jour', 'success');
   } else {
     data.events.push(entry);
-    showToast('Événement ajouté', 'success');
   }
 
-  markUnsaved();
   closeEventModal();
   renderEvents();
+
+  // Persist to Supabase
+  try {
+    const row = {
+      session_id: currentSessionId,
+      title: name,
+      date,
+      end_date: endDate || null,
+      description,
+      event_type: type,
+      importance: important ? 'high' : 'normal',
+    };
+    if (id) {
+      await sbRequest('schedule_events', 'PATCH', row, `?id=eq.${encodeURIComponent(id)}`);
+    } else {
+      const result = await sbRequest('schedule_events', 'POST', [row]);
+      if (result && result[0]) {
+        const localEntry = data.events[data.events.length - 1];
+        localEntry.id = result[0].id;
+      }
+    }
+    showToast(id ? 'Événement mis à jour' : 'Événement ajouté', 'success');
+    markSaved();
+  } catch (err) {
+    console.error('Supabase save failed:', err);
+    showToast('Sauvegardé localement (erreur Supabase)', 'warning');
+    markUnsaved();
+  }
 }
 
 // ── PARAMS (Tab 4) ───────────────────────────────────────────
@@ -592,7 +830,7 @@ function renderParams() {
   renderAnnouncements();
 }
 
-function saveParams() {
+async function saveParams() {
   data.academy      = document.getElementById('paramAcademy').value.trim();
   data.session      = document.getElementById('paramSession').value.trim();
   data.sessionStart = document.getElementById('paramSessionStart').value;
@@ -602,8 +840,26 @@ function saveParams() {
     phone:   document.getElementById('paramPhone').value.trim(),
     address: document.getElementById('paramAddress').value.trim(),
   };
-  markUnsaved();
-  showToast('Paramètres enregistrés', 'success');
+
+  // Persist session to Supabase
+  if (currentSessionId) {
+    try {
+      await sbRequest('schedule_sessions', 'PATCH', {
+        name: data.session,
+        start_date: data.sessionStart,
+        end_date: data.sessionEnd,
+      }, `?id=eq.${encodeURIComponent(currentSessionId)}`);
+      showToast('Paramètres enregistrés dans Supabase', 'success');
+      markSaved();
+    } catch (err) {
+      console.error('Supabase save failed:', err);
+      showToast('Paramètres sauvegardés localement (erreur Supabase)', 'warning');
+      markUnsaved();
+    }
+  } else {
+    showToast('Paramètres enregistrés localement', 'success');
+    markUnsaved();
+  }
 }
 
 // ── ANNOUNCEMENTS ────────────────────────────────────────────
@@ -641,9 +897,18 @@ function renderAnnouncements() {
   }).join('');
 
   list.querySelectorAll('.ann-active-toggle').forEach(chk => {
-    chk.addEventListener('change', () => {
+    chk.addEventListener('change', async () => {
       const a = data.announcements.find(x => x.id === chk.dataset.id);
-      if (a) { a.active = chk.checked; markUnsaved(); }
+      if (a) {
+        a.active = chk.checked;
+        try {
+          await sbRequest('schedule_announcements', 'PATCH', { is_active: chk.checked }, `?id=eq.${encodeURIComponent(a.id)}`);
+          markSaved();
+        } catch (err) {
+          console.error('Supabase toggle failed:', err);
+          markUnsaved();
+        }
+      }
     });
   });
   list.querySelectorAll('.edit-ann-btn').forEach(btn => {
@@ -653,12 +918,20 @@ function renderAnnouncements() {
     });
   });
   list.querySelectorAll('.delete-ann-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       if (confirm('Supprimer cette annonce ?')) {
-        data.announcements = data.announcements.filter(x => x.id !== btn.dataset.id);
-        markUnsaved();
+        const aid = btn.dataset.id;
+        data.announcements = data.announcements.filter(x => x.id !== aid);
         renderAnnouncements();
-        showToast('Annonce supprimée', 'success');
+        try {
+          await sbRequest('schedule_announcements', 'DELETE', null, `?id=eq.${encodeURIComponent(aid)}`);
+          showToast('Annonce supprimée', 'success');
+          markSaved();
+        } catch (err) {
+          console.error('Supabase delete failed:', err);
+          showToast('Supprimée localement (erreur Supabase)', 'warning');
+          markUnsaved();
+        }
       }
     });
   });
@@ -678,7 +951,7 @@ function closeAnnouncementModal() {
   document.getElementById('announcementModal').classList.add('hidden');
 }
 
-function saveAnnouncement() {
+async function saveAnnouncement() {
   const id     = document.getElementById('announcementId').value;
   const text   = document.getElementById('announcementText').value.trim();
   const type   = document.getElementById('announcementType').value;
@@ -691,15 +964,261 @@ function saveAnnouncement() {
   if (id) {
     const idx = data.announcements.findIndex(a => a.id === id);
     if (idx !== -1) data.announcements[idx] = entry;
-    showToast('Annonce mise à jour', 'success');
   } else {
     data.announcements.push(entry);
-    showToast('Annonce ajoutée', 'success');
   }
 
-  markUnsaved();
   closeAnnouncementModal();
   renderAnnouncements();
+
+  // Persist to Supabase
+  try {
+    const row = {
+      session_id: currentSessionId,
+      title: text,
+      type,
+      is_active: active,
+    };
+    if (id) {
+      await sbRequest('schedule_announcements', 'PATCH', row, `?id=eq.${encodeURIComponent(id)}`);
+    } else {
+      const result = await sbRequest('schedule_announcements', 'POST', [row]);
+      if (result && result[0]) {
+        const localEntry = data.announcements[data.announcements.length - 1];
+        localEntry.id = result[0].id;
+      }
+    }
+    showToast(id ? 'Annonce mise à jour' : 'Annonce ajoutée', 'success');
+    markSaved();
+  } catch (err) {
+    console.error('Supabase save failed:', err);
+    showToast('Sauvegardé localement (erreur Supabase)', 'warning');
+    markUnsaved();
+  }
+}
+
+// ── DATE RANGES ─────────────────────────────────────────
+
+/**
+ * Count occurrences of each weekday between start and end dates,
+ * excluding holidays. Returns { 0: n, 1: n, ... 6: n } (0=Sunday).
+ */
+function countWeekdayOccurrences(startStr, endStr, holidays) {
+  const counts = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+  if (!startStr || !endStr) return counts;
+
+  // Build a Set of holiday dates (YYYY-MM-DD) for fast lookup
+  const holidayDates = new Set();
+  for (const h of (holidays || [])) {
+    const hStart = h.date;
+    const hEnd = h.endDate || h.date;
+    const d = new Date(hStart + 'T00:00:00');
+    const end = new Date(hEnd + 'T00:00:00');
+    while (d <= end) {
+      holidayDates.add(d.toISOString().slice(0, 10));
+      d.setDate(d.getDate() + 1);
+    }
+  }
+
+  const cur = new Date(startStr + 'T00:00:00');
+  const end = new Date(endStr + 'T00:00:00');
+  while (cur <= end) {
+    const ymd = cur.toISOString().slice(0, 10);
+    if (!holidayDates.has(ymd)) {
+      counts[cur.getDay()]++;
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return counts;
+}
+
+/**
+ * Build a compact breakdown string showing how many sessions per weekday
+ * for courses assigned to a date range. Only shows days that have courses.
+ */
+function buildDayBreakdown(dr, schedule, holidays) {
+  const dayShorts = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  const counts = countWeekdayOccurrences(dr.startDate, dr.endDate, holidays);
+
+  // Find which dayIndices have courses in this range
+  const daysWithCourses = {};
+  for (const day of (schedule || [])) {
+    const coursesInRange = (day.classes || []).filter(c => c.dateRangeId === dr.id);
+    if (coursesInRange.length > 0) {
+      daysWithCourses[day.dayIndex] = coursesInRange.length;
+    }
+  }
+
+  if (Object.keys(daysWithCourses).length === 0) return '';
+
+  return Object.entries(daysWithCourses)
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([dayIdx, numCourses]) => {
+      const n = counts[dayIdx] || 0;
+      return `<span class="inline-block bg-gray-100 text-gray-700 text-xs px-1.5 py-0.5 rounded mr-1 mb-1">${dayShorts[dayIdx]} : ${n}x</span>`;
+    })
+    .join('');
+}
+
+function renderDateRanges() {
+  const tbody = document.getElementById('dateRangesTableBody');
+  if (!tbody) return;
+
+  if (!dateRanges || dateRanges.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-400 py-6">Aucune plage de dates</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = dateRanges.map(dr => {
+    // Count courses assigned to this range
+    let courseCount = 0;
+    for (const day of (data.schedule || [])) {
+      for (const cls of (day.classes || [])) {
+        if (cls.dateRangeId === dr.id) courseCount++;
+      }
+    }
+    const breakdown = buildDayBreakdown(dr, data.schedule, data.holidays);
+    return `
+      <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+        <td class="px-4 py-2 font-medium text-gray-900">${escHtml(dr.name)}</td>
+        <td class="px-4 py-2 text-gray-700">${formatDate(dr.startDate)}</td>
+        <td class="px-4 py-2 text-gray-700">${formatDate(dr.endDate)}</td>
+        <td class="px-4 py-2 text-gray-600">${courseCount} cours</td>
+        <td class="px-4 py-2">${breakdown || '<span class="text-gray-400 text-xs">—</span>'}</td>
+        <td class="px-4 py-2 text-right whitespace-nowrap">
+          <button class="edit-dr-btn text-blue-600 hover:text-blue-800 text-xs font-semibold mr-2" data-id="${escHtml(dr.id)}">Modifier</button>
+          <button class="delete-dr-btn text-red-500 hover:text-red-700 text-xs font-semibold" data-id="${escHtml(dr.id)}">Supprimer</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  tbody.querySelectorAll('.edit-dr-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const dr = dateRanges.find(x => x.id === btn.dataset.id);
+      if (dr) openDateRangeModal(dr);
+    });
+  });
+  tbody.querySelectorAll('.delete-dr-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (confirm('Supprimer cette plage ? Les cours associés reviendront aux dates de session principale.')) {
+        await deleteDateRange(btn.dataset.id);
+      }
+    });
+  });
+}
+
+function openDateRangeModal(dr) {
+  document.getElementById('dateRangeModalTitle').textContent = dr ? 'Modifier la plage' : 'Ajouter une plage';
+  document.getElementById('dateRangeId').value    = dr ? dr.id        : '';
+  document.getElementById('dateRangeName').value  = dr ? dr.name      : '';
+  document.getElementById('dateRangeStart').value = dr ? dr.startDate : (data.sessionStart || '');
+  document.getElementById('dateRangeEnd').value   = dr ? dr.endDate   : (data.sessionEnd || '');
+  updateDateRangePreview();
+  document.getElementById('dateRangeModal').classList.remove('hidden');
+  document.getElementById('dateRangeName').focus();
+}
+
+function updateDateRangePreview() {
+  const start = document.getElementById('dateRangeStart').value;
+  const end   = document.getElementById('dateRangeEnd').value;
+  const preview = document.getElementById('dateRangePreview');
+  const content = document.getElementById('dateRangePreviewContent');
+
+  if (!start || !end) {
+    preview.classList.add('hidden');
+    return;
+  }
+
+  const counts = countWeekdayOccurrences(start, end, data.holidays);
+  const dayNames = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+
+  // Only show days that have at least 1 occurrence
+  const items = dayNames
+    .map((name, i) => ({ name, count: counts[i] }))
+    .filter(d => d.count > 0);
+
+  // Also compute total weeks
+  const diffMs = new Date(end + 'T00:00:00') - new Date(start + 'T00:00:00');
+  const totalDays = Math.floor(diffMs / 86400000) + 1;
+  const weeks = Math.round(totalDays / 7 * 10) / 10;
+
+  content.innerHTML = items
+    .map(d => `<span class="inline-block bg-white border border-gray-200 text-gray-700 px-2 py-1 rounded mr-1 mb-1">${d.name} : <strong>${d.count}</strong></span>`)
+    .join('') +
+    `<div class="mt-1 text-gray-400">${totalDays} jours (~${weeks} semaines)</div>`;
+
+  preview.classList.remove('hidden');
+}
+
+function closeDateRangeModal() {
+  document.getElementById('dateRangeModal').classList.add('hidden');
+}
+
+async function saveDateRange() {
+  const id    = document.getElementById('dateRangeId').value;
+  const name  = document.getElementById('dateRangeName').value.trim();
+  const start = document.getElementById('dateRangeStart').value;
+  const end   = document.getElementById('dateRangeEnd').value;
+
+  if (!name)  { showToast('Le nom du groupe est requis.', 'error'); return; }
+  if (!start) { showToast('La date de début est requise.', 'error'); return; }
+  if (!end)   { showToast('La date de fin est requise.', 'error'); return; }
+
+  const rangeId = id || ('dr-' + Date.now());
+  const entry = { id: rangeId, name, startDate: start, endDate: end, sortOrder: dateRanges.length };
+
+  if (id) {
+    const idx = dateRanges.findIndex(r => r.id === id);
+    if (idx !== -1) dateRanges[idx] = entry;
+  } else {
+    dateRanges.push(entry);
+  }
+
+  closeDateRangeModal();
+  renderDateRanges();
+
+  try {
+    const row = {
+      id: rangeId,
+      session_id: currentSessionId,
+      name,
+      start_date: start,
+      end_date: end,
+      sort_order: entry.sortOrder,
+    };
+    await sbRequest('schedule_date_ranges', 'POST', [row]);
+    showToast(id ? 'Plage mise à jour' : 'Plage ajoutée', 'success');
+    markSaved();
+  } catch (err) {
+    console.error('Supabase save failed:', err);
+    showToast('Sauvegardé localement (erreur Supabase)', 'warning');
+    markUnsaved();
+  }
+}
+
+async function deleteDateRange(id) {
+  dateRanges = dateRanges.filter(r => r.id !== id);
+
+  // Reset courses that had this range
+  for (const day of (data.schedule || [])) {
+    for (const cls of (day.classes || [])) {
+      if (cls.dateRangeId === id) cls.dateRangeId = '';
+    }
+  }
+
+  renderDateRanges();
+
+  try {
+    // Supabase FK ON DELETE SET NULL handles the course column reset
+    await sbRequest('schedule_date_ranges', 'DELETE', null, `?id=eq.${encodeURIComponent(id)}`);
+    showToast('Plage supprimée', 'success');
+    markSaved();
+  } catch (err) {
+    console.error('Supabase delete failed:', err);
+    showToast('Supprimée localement (erreur Supabase)', 'warning');
+    markUnsaved();
+  }
 }
 
 // ── JSON Download ────────────────────────────────────────────
@@ -760,7 +1279,7 @@ function formatDate(dateStr) {
 // ── Modal Close Helpers ──────────────────────────────────────
 
 function closeAllModals() {
-  ['courseModal', 'holidayModal', 'eventModal', 'announcementModal'].forEach(id => {
+  ['courseModal', 'holidayModal', 'eventModal', 'announcementModal', 'dateRangeModal'].forEach(id => {
     document.getElementById(id).classList.add('hidden');
   });
 }
@@ -811,6 +1330,12 @@ function initBindings() {
   document.getElementById('addAnnouncementBtn').addEventListener('click', () => openAnnouncementModal(null));
   document.getElementById('saveAnnouncementBtn').addEventListener('click', saveAnnouncement);
 
+  // Date Ranges
+  document.getElementById('addDateRangeBtn').addEventListener('click', () => openDateRangeModal(null));
+  document.getElementById('saveDateRangeBtn').addEventListener('click', saveDateRange);
+  document.getElementById('dateRangeStart').addEventListener('change', updateDateRangePreview);
+  document.getElementById('dateRangeEnd').addEventListener('change', updateDateRangePreview);
+
   // Download (both buttons)
   document.getElementById('downloadBtnTop').addEventListener('click', downloadJSON);
   document.getElementById('downloadBtnMain').addEventListener('click', downloadJSON);
@@ -825,6 +1350,9 @@ function initBindings() {
   document.getElementById('previewBtn').addEventListener('click', () => {
     window.open('index.html', '_blank');
   });
+
+  // Junior Combative link
+  document.getElementById('jcLink').href = JUNIOR_COMBATIVE_URL;
 }
 
 // ── Init ─────────────────────────────────────────────────────

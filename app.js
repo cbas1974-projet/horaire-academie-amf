@@ -12,11 +12,30 @@
      CONFIG
      ============================================================ */
 
+  // Supabase (public read-only)
+  const SUPABASE_URL  = 'https://enkwnelkwlvlyjvbwyzq.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVua3duZWxrd2x2bHlqdmJ3eXpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzU1MjgsImV4cCI6MjA4NDYxMTUyOH0.SzvyfEQGjfav927--cYQZVF8jJ47B6V9jHrNh6KuT6M';
+
+  const DISCIPLINES_DEFAULT = {
+    jiujitsu:  { label: "Jiu-Jitsu d'autodéfense", color: '#c9a227' },
+    muaythai:  { label: 'Muay Thai',               color: '#dc2626' },
+    superkids: { label: 'Programme Superkids',      color: '#22d3ee' },
+    gracie:    { label: 'Gracie Jiu-Jitsu',         color: '#2563eb' },
+  };
+
   // Timeline bounds (HH:MM) — schedule data drives the min/max
   // with padding added at runtime.
   const TIMELINE_PAD_BEFORE = 15; // minutes before first class
   const TIMELINE_PAD_AFTER  = 15; // minutes after last class
   const HOUR_HEIGHT_PX      = 80; // pixels per 60 minutes in week view
+
+  // Discipline → logo file (in logos/ folder)
+  const DISC_LOGOS = {
+    jiujitsu:  'logos/jiujitsu.png',
+    muaythai:  'logos/muaythai.jpg',
+    superkids: 'logos/superkids.png',
+    gracie:    'logos/gracie.jpg',
+  };
 
   /* ============================================================
      STATE
@@ -28,8 +47,11 @@
   let activeFilters = new Set(['jiujitsu', 'muaythai', 'superkids', 'gracie']);
   let announcementDismissed = false; // stays closed within session
 
+  // Week view state
+  let currentWeekStart = null;       // Date — Sunday of the displayed week
+
   // Month view state
-  let currentMonthDate = new Date(); // tracks which month is displayed
+  let currentMonthDate = null;       // tracks which month is displayed (set from session start)
   let selectedMonthDay = null;       // "YYYY-MM-DD" of the clicked day in month view
 
   /* ============================================================
@@ -123,20 +145,146 @@
   }
 
   /* ============================================================
-     DATA LOADING
+     DATA LOADING — Supabase first, JSON fallback
      ============================================================ */
 
+  /**
+   * Query Supabase REST API (dojo schema).
+   */
+  async function sbQuery(table, query) {
+    const url = `${SUPABASE_URL}/rest/v1/${table}?${query}`;
+    const res = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+        'Accept-Profile': 'dojo',
+      },
+    });
+    if (!res.ok) throw new Error(`Supabase ${table}: ${res.status}`);
+    return res.json();
+  }
+
+  /**
+   * Calculate duration string from startTime/endTime.
+   */
+  function calcDurationStr(start, end) {
+    const mins = timeToMinutes(end) - timeToMinutes(start);
+    if (mins <= 0) return '';
+    if (mins < 60) return `${mins} min`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`;
+  }
+
+  /**
+   * Load schedule from Supabase, transforming into appData format.
+   * Falls back to schedule.json on failure.
+   */
   async function loadSchedule() {
     try {
-      const resp = await fetch('schedule.json');
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      return await resp.json();
+      return await loadFromSupabase();
     } catch (err) {
-      if (window.__SCHEDULE_FALLBACK) {
-        return window.__SCHEDULE_FALLBACK;
+      console.warn('Supabase load failed, falling back to schedule.json:', err.message);
+      try {
+        const resp = await fetch('schedule.json');
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        return await resp.json();
+      } catch (err2) {
+        if (window.__SCHEDULE_FALLBACK) return window.__SCHEDULE_FALLBACK;
+        throw err2;
       }
-      throw err;
     }
+  }
+
+  /**
+   * Fetch all data from Supabase and transform to appData format.
+   */
+  async function loadFromSupabase() {
+    const [sessions, courses, holidays, events, announcements] = await Promise.all([
+      sbQuery('schedule_sessions', 'is_current=eq.true&limit=1'),
+      sbQuery('schedule_courses', 'is_active=eq.true&order=day_index,sort_order'),
+      sbQuery('schedule_holidays', 'select=*'),
+      sbQuery('schedule_events', 'select=*'),
+      sbQuery('schedule_announcements', 'select=*'),
+    ]);
+    // Fetch date ranges separately — table may not exist yet (pre-migration)
+    let ranges = [];
+    try { ranges = await sbQuery('schedule_date_ranges', 'select=*&order=sort_order'); } catch { }
+
+    const session = sessions[0];
+    if (!session) throw new Error('No current session found');
+
+    // Filter by session_id
+    const sid = session.id;
+    const sessHolidays = holidays.filter(h => h.session_id === sid);
+    const sessEvents = events.filter(e => e.session_id === sid);
+    const sessAnnouncements = announcements.filter(a => a.session_id === sid);
+    const sessRanges = (ranges || []).filter(r => r.session_id === sid);
+
+    // Build schedule array (7 days)
+    const dayNames = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    const dayShorts = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+    const schedule = dayNames.map((day, i) => ({
+      day,
+      dayShort: dayShorts[i],
+      dayIndex: i,
+      classes: courses
+        .filter(c => c.day_index === i)
+        .map(c => ({
+          id: c.id,
+          time: `${c.start_time} - ${c.end_time}`,
+          startTime: c.start_time,
+          endTime: c.end_time,
+          name: c.name,
+          description: c.description || '',
+          ageGroup: c.age_group || '',
+          discipline: c.discipline,
+          duration: calcDurationStr(c.start_time, c.end_time),
+          dateRangeId: c.date_range_id || '',
+        })),
+    }));
+
+    return {
+      academy: 'Académie d\'Arts Martiaux Familial',
+      session: session.name,
+      sessionStart: session.start_date,
+      sessionEnd: session.end_date,
+      updated: new Date().toISOString().slice(0, 10),
+      contact: {
+        email: 'info@academie-amf.com',
+        phone: '',
+        address: '129 avenue Principale, Rouyn-Noranda (Québec) J9X 4P3 — Sous-sol, 3e studio',
+      },
+      announcements: sessAnnouncements.map(a => ({
+        id: a.id,
+        text: a.title,
+        type: a.type || 'info',
+        active: a.is_active !== false,
+      })),
+      disciplines: DISCIPLINES_DEFAULT,
+      dateRanges: sessRanges.map(r => ({
+        id: r.id,
+        name: r.name,
+        startDate: r.start_date,
+        endDate: r.end_date,
+        sortOrder: r.sort_order || 0,
+      })),
+      holidays: sessHolidays.map(h => ({
+        id: h.id,
+        date: h.date,
+        name: h.label || '',
+      })),
+      events: sessEvents.map(e => ({
+        id: e.id,
+        date: e.date,
+        endDate: e.end_date || undefined,
+        name: e.title,
+        description: e.description || '',
+        type: e.event_type || 'autre',
+        important: e.importance === 'high',
+      })),
+      schedule,
+    };
   }
 
   /* ============================================================
@@ -144,7 +292,7 @@
      ============================================================ */
 
   function showLoading() {
-    const semaine = document.getElementById('view-semaine');
+    const semaine = document.getElementById('week-grid-container');
     if (semaine) {
       semaine.innerHTML = `
         <div class="space-y-4">
@@ -160,7 +308,7 @@
   }
 
   function showError(message) {
-    const semaine = document.getElementById('view-semaine');
+    const semaine = document.getElementById('week-grid-container');
     if (semaine) {
       semaine.innerHTML = `
         <div class="col-span-full text-center py-12">
@@ -217,6 +365,51 @@
   }
 
   /* ============================================================
+     UPCOMING EVENTS BANNER
+     ============================================================ */
+
+  function renderUpcomingEvents(events, sessionStart, sessionEnd) {
+    const section = document.getElementById('announcement-section');
+    if (!section || !events || !events.length) return;
+
+    // Show events happening during the session
+    const now = new Date();
+    const todayYMD = toYMD(now);
+
+    // Filter: upcoming events (date >= today) or ongoing (endDate >= today)
+    const upcoming = events
+      .filter(e => {
+        const end = e.endDate || e.date;
+        return end >= todayYMD;
+      })
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 3); // max 3
+
+    if (!upcoming.length) return;
+
+    const formatShort = (d) => {
+      if (!d) return '';
+      const dt = new Date(d + 'T00:00:00');
+      return dt.toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' });
+    };
+
+    const eventsHtml = upcoming.map(e => {
+      const dateLabel = e.endDate && e.endDate !== e.date
+        ? `${formatShort(e.date)} au ${formatShort(e.endDate)}`
+        : formatShort(e.date);
+      const badge = e.important ? ' <span style="color:var(--red);font-weight:700;">●</span>' : '';
+      return `
+        <div class="announcement-bar mb-2" role="status" style="background:rgba(201,162,39,0.12);border-color:rgba(201,162,39,0.3);">
+          <span class="ann-icon" aria-hidden="true">&#9733;</span>
+          <span><strong>${esc(e.name)}</strong>${badge} — ${dateLabel}${e.description ? ' — ' + esc(e.description) : ''}</span>
+        </div>`;
+    }).join('');
+
+    // Append after existing announcements (don't replace)
+    section.insertAdjacentHTML('beforeend', eventsHtml);
+  }
+
+  /* ============================================================
      LEGEND
      ============================================================ */
 
@@ -244,6 +437,25 @@
     const updatedEl = document.getElementById('last-updated');
     if (updatedEl && data.updated) {
       updatedEl.textContent = `Mis à jour : ${data.updated}`;
+    }
+
+    // Date ranges in header
+    const rangesEl = document.getElementById('session-date-ranges-header');
+    if (rangesEl) {
+      const ranges = data.dateRanges || [];
+      const formatShort = (d) => d
+        ? new Date(d + 'T00:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' })
+        : '';
+
+      if (ranges.length > 0) {
+        rangesEl.innerHTML = ranges.map(r => {
+          const color = r.name.toLowerCase().includes('muay')
+            ? 'var(--red-light)'
+            : 'var(--gold-light)';
+          return `<p class="text-sm" style="color:${color}; font-weight:600;">
+            ${esc(r.name)} : ${formatShort(r.startDate)} — ${formatShort(r.endDate)}</p>`;
+        }).join('');
+      }
     }
 
     // Contact phone/address
@@ -512,7 +724,7 @@
    * Build the HTML for the week timeline view.
    */
   function renderWeekView(data) {
-    const { schedule, holidays, disciplines } = data;
+    const { schedule, holidays, disciplines, sessionStart, sessionEnd } = data;
     const { minMins, maxMins } = computeTimelineBounds(schedule);
     const totalHeight = minsToPixels(maxMins, minMins);
 
@@ -528,13 +740,10 @@
     }
 
     // --- DAY HEADERS ---
-    // dayIndex order: 0 (Dim) → 6 (Sam)
     const DAY_ORDER = [0, 1, 2, 3, 4, 5, 6];
 
-    // Compute real dates for this week (Mon-based display, but we show Sun→Sat)
-    // Find start of week (Sunday)
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - todayJS);
+    // Use stored week position, or compute initial one
+    const weekStart = currentWeekStart;
 
     function getDateForDayIndex(di) {
       const d = new Date(weekStart);
@@ -588,7 +797,22 @@
       const dateObj = getDateForDayIndex(di);
       const dateYMD = toYMD(dateObj);
       const holiday = getHolidayForDate(dateYMD, holidays);
-      const hasClasses = dayData && dayData.classes && dayData.classes.length > 0;
+
+      // Filter classes: only show if this date is within the course's date range
+      // (or within session dates for courses without a specific range)
+      const dateRanges = data.dateRanges || [];
+      const filteredClasses = dayData && dayData.classes
+        ? dayData.classes.filter(cls => {
+            let start = sessionStart || '';
+            let end   = sessionEnd || '';
+            if (cls.dateRangeId) {
+              const dr = dateRanges.find(r => r.id === cls.dateRangeId);
+              if (dr) { start = dr.startDate; end = dr.endDate; }
+            }
+            return dateYMD >= start && dateYMD <= end;
+          })
+        : [];
+      const hasClasses = filteredClasses.length > 0;
 
       const todayCls = isToday ? ' week-col-today' : '';
 
@@ -618,7 +842,7 @@
             ">${esc(holiday.name)}</span>
           </div>`;
       } else if (hasClasses) {
-        blocksHtml = dayData.classes.map(cls => {
+        blocksHtml = filteredClasses.map(cls => {
           const startMins = timeToMinutes(cls.startTime);
           const endMins   = timeToMinutes(cls.endTime);
           const topPx     = minsToPixels(startMins, minMins);
@@ -636,6 +860,7 @@
               ${ariaHidden}
               title="${esc(cls.name)} — ${esc(cls.ageGroup)} — ${esc(cls.time)}"
               tabindex="0">
+              ${DISC_LOGOS[cls.discipline] ? `<img src="${DISC_LOGOS[cls.discipline]}" alt="" class="week-block-watermark" loading="lazy">` : ''}
               <span class="tb-time">${esc(cls.startTime)} - ${esc(cls.endTime)}</span>
               <span class="tb-name">${formatCourseName(cls.name)}</span>
               <span class="tb-age">${esc(cls.ageGroup)}</span>
@@ -661,7 +886,36 @@
         </div>`;
     }).join('');
 
-    const container = document.getElementById('view-semaine');
+    // --- WEEK TITLE ---
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const titleEl = document.getElementById('week-title');
+    if (titleEl) {
+      const monthNames = ['janvier','février','mars','avril','mai','juin',
+                          'juillet','août','septembre','octobre','novembre','décembre'];
+      // If week spans two months, show both
+      const startMonth = monthNames[weekStart.getMonth()];
+      const endMonth   = monthNames[weekEnd.getMonth()];
+      const startYear  = weekStart.getFullYear();
+      const endYear    = weekEnd.getFullYear();
+
+      let monthLabel;
+      if (startMonth === endMonth) {
+        monthLabel = `${startMonth} ${startYear}`;
+      } else if (startYear === endYear) {
+        monthLabel = `${startMonth} – ${endMonth} ${startYear}`;
+      } else {
+        monthLabel = `${startMonth} ${startYear} – ${endMonth} ${endYear}`;
+      }
+
+      titleEl.innerHTML = `
+        <div class="week-title-month">${monthLabel}</div>
+        <div class="week-title-range">Semaine du ${weekStart.getDate()} au ${weekEnd.getDate()}</div>`;
+    }
+
+    // --- WEEK GRID ---
+    const container = document.getElementById('week-grid-container');
     if (!container) return;
 
     container.innerHTML = `
@@ -710,12 +964,18 @@
     const day = data.schedule[currentDayIdx];
     if (!day) return;
 
-    const now      = new Date();
-    const todayJS  = now.getDay();
+    // Use session-aware reference date (same logic as week view)
+    let refDate = new Date();
+    const sessionStartDate = data.sessionStart ? new Date(data.sessionStart + 'T00:00:00') : null;
+    const sessionEndDate   = data.sessionEnd   ? new Date(data.sessionEnd   + 'T00:00:00') : null;
+    if (sessionStartDate && refDate < sessionStartDate) refDate = sessionStartDate;
+    if (sessionEndDate   && refDate > sessionEndDate)   refDate = sessionEndDate;
 
-    // Compute the actual calendar date for this day in the current week
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - todayJS);
+    const refJS = refDate.getDay();
+
+    // Compute the actual calendar date for this day in the reference week
+    const weekStart = new Date(refDate);
+    weekStart.setDate(refDate.getDate() - refJS);
     const dayDate = new Date(weekStart);
     dayDate.setDate(weekStart.getDate() + day.dayIndex);
     const dateYMD = toYMD(dayDate);
@@ -724,7 +984,8 @@
     // Day title
     const titleEl = document.getElementById('day-title');
     if (titleEl) {
-      const isToday = day.dayIndex === todayJS;
+      const todayJS = new Date().getDay();
+      const isToday = day.dayIndex === todayJS && toYMD(new Date()) === dateYMD;
       titleEl.innerHTML = `
         <div class="day-title-name">${esc(day.day)}${isToday ? ' <span style="font-size:0.75rem; color:var(--gold); font-weight:700; vertical-align:middle;">Aujourd\'hui</span>' : ''}</div>
         <div class="day-title-date">${formatDateFr(dayDate)}</div>`;
@@ -743,9 +1004,8 @@
       return;
     }
 
-    const classes = (day.classes || []).slice().sort(
-      (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
-    );
+    const classes = getClassesForDate(dateYMD, data.schedule, data.holidays)
+      .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 
     if (!classes.length) {
       listEl.innerHTML = `<p class="empty-day" role="status">Aucun cours ce jour.</p>`;
@@ -764,6 +1024,7 @@
           ${ariaHidden}
           aria-label="${esc(cls.name)}, ${esc(cls.ageGroup)}, ${esc(cls.time)}">
           <div class="dc-left-border ${esc(cls.discipline)}" aria-hidden="true"></div>
+          ${DISC_LOGOS[cls.discipline] ? `<img src="${DISC_LOGOS[cls.discipline]}" alt="" class="dc-logo ${esc(cls.discipline)}" loading="lazy">` : ''}
           <div class="dc-body">
             <div class="dc-header">
               <span class="dc-badge ${esc(cls.discipline)}">${esc(data.disciplines[cls.discipline]?.label || cls.discipline)}</span>
@@ -847,21 +1108,40 @@
   }
 
   /**
-   * Get the set of unique disciplines that have a class on a given YMD date.
-   * Filters by activeFilters and the schedule's recurring weekday pattern.
+   * Filter classes for a specific date, respecting date ranges and session bounds.
    */
-  function getDisciplinesForDate(dateYmd, schedule, holidays) {
-    // If it's a holiday, no class indicators
-    if (getHolidayForDate(dateYmd, holidays)) return new Set();
+  function getClassesForDate(dateYmd, schedule, holidays) {
+    if (getHolidayForDate(dateYmd, holidays)) return [];
+    if (!appData) return [];
 
     const d = new Date(dateYmd + 'T00:00:00');
-    const jsDay = d.getDay(); // 0=Sun
-
+    const jsDay = d.getDay();
     const dayData = schedule.find(dd => dd.dayIndex === jsDay);
-    if (!dayData || !dayData.classes || !dayData.classes.length) return new Set();
+    if (!dayData || !dayData.classes || !dayData.classes.length) return [];
 
+    const dateRanges = appData.dateRanges || [];
+    const sessionStart = appData.sessionStart || '';
+    const sessionEnd   = appData.sessionEnd || '';
+
+    return dayData.classes.filter(cls => {
+      let start = sessionStart;
+      let end   = sessionEnd;
+      if (cls.dateRangeId) {
+        const dr = dateRanges.find(r => r.id === cls.dateRangeId);
+        if (dr) { start = dr.startDate; end = dr.endDate; }
+      }
+      return dateYmd >= start && dateYmd <= end;
+    });
+  }
+
+  /**
+   * Get the set of unique disciplines that have a class on a given YMD date.
+   * Respects date ranges and session bounds.
+   */
+  function getDisciplinesForDate(dateYmd, schedule, holidays) {
+    const classes = getClassesForDate(dateYmd, schedule, holidays);
     const discs = new Set();
-    for (const cls of dayData.classes) {
+    for (const cls of classes) {
       discs.add(cls.discipline);
     }
     return discs;
@@ -1065,10 +1345,8 @@
     }
 
     if (!holiday) {
-      const dayData = schedule.find(dd => dd.dayIndex === jsDay);
-      const classes = dayData && dayData.classes
-        ? [...dayData.classes].sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime))
-        : [];
+      const classes = getClassesForDate(dateYmd, schedule, holidays)
+        .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
 
       if (classes.length === 0 && dayEvents.length === 0) {
         content += `<p class="month-detail-empty">Aucun cours ce jour.</p>`;
@@ -1081,6 +1359,7 @@
 
         content += `
           <div class="month-detail-card${hiddenCls}" data-discipline="${esc(cls.discipline)}" ${ariaHidden} role="listitem">
+            ${DISC_LOGOS[cls.discipline] ? `<img src="${DISC_LOGOS[cls.discipline]}" alt="" class="month-detail-logo ${esc(cls.discipline)}" loading="lazy">` : ''}
             <div class="month-detail-card-time" style="color:${esc(color)};">
               <span class="month-detail-start">${esc(cls.startTime)}</span>
               <span class="month-detail-end">${esc(cls.endTime)}</span>
@@ -1130,6 +1409,30 @@
         );
         selectedMonthDay = null;
         renderMonthView(appData);
+        applyFilters();
+      });
+    }
+  }
+
+  /**
+   * Bind week navigation buttons.
+   */
+  function bindWeekNav() {
+    const prevBtn = document.getElementById('week-prev');
+    const nextBtn = document.getElementById('week-next');
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
+        currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+        renderWeekView(appData);
+        applyFilters();
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+        renderWeekView(appData);
         applyFilters();
       });
     }
@@ -1223,21 +1526,42 @@
    * Render the session overview view.
    */
   function renderSessionView(data) {
-    const { session, sessionStart, sessionEnd, schedule, holidays, events, disciplines } = data;
+    const { session, sessionStart, sessionEnd, schedule, holidays, events, disciplines, dateRanges } = data;
 
     // --- Session Header ---
     const headerEl = document.getElementById('session-view-header');
     if (headerEl) {
-      const startFr = sessionStart
-        ? new Date(sessionStart + 'T00:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })
+      const formatDateLong = (d) => d
+        ? new Date(d + 'T00:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })
         : '';
-      const endFr = sessionEnd
-        ? new Date(sessionEnd + 'T00:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })
-        : '';
+
+      const startFr = formatDateLong(sessionStart);
+      const endFr   = formatDateLong(sessionEnd);
+
+      // Check if date ranges exist and have different dates
+      const ranges = dateRanges || [];
+      const allSameDates = ranges.length === 0 || ranges.every(r =>
+        r.startDate === sessionStart && r.endDate === sessionEnd
+      );
+
+      let datesHtml = '';
+      if (ranges.length > 0 && !allSameDates) {
+        // Show individual date ranges
+        datesHtml = '<div class="session-date-ranges">' +
+          ranges.map(r => {
+            const s = formatDateLong(r.startDate);
+            const e = formatDateLong(r.endDate);
+            return `<p class="session-dates session-date-range-item"><strong>${esc(r.name)}</strong> : ${s} — ${e}</p>`;
+          }).join('') +
+          '</div>';
+      } else if (startFr && endFr) {
+        // All same dates or no ranges — show single date line
+        datesHtml = `<p class="session-dates">${startFr} — ${endFr}</p>`;
+      }
 
       headerEl.innerHTML = `
         <h2 class="session-title">Planning ${esc(session)}</h2>
-        ${startFr && endFr ? `<p class="session-dates">${startFr} — ${endFr}</p>` : ''}`;
+        ${datesHtml}`;
     }
 
     // --- Stats ---
@@ -1351,18 +1675,38 @@
       const data = await loadSchedule();
       appData = data;
 
+      // Set month view to session start (or today if no session dates)
+      if (data.sessionStart) {
+        currentMonthDate = new Date(data.sessionStart + 'T00:00:00');
+      } else {
+        currentMonthDate = new Date();
+      }
+
       renderHeader(data);
       renderLegend(data.disciplines);
       renderAnnouncements(data.announcements || []);
+      renderUpcomingEvents(data.events || [], data.sessionStart, data.sessionEnd);
 
       // Set initial day index for jour view
       currentDayIdx = findDefaultDayIdx(data.schedule);
+
+      // Set initial week start (session-aware)
+      {
+        let refDate = new Date();
+        const startD = data.sessionStart ? new Date(data.sessionStart + 'T00:00:00') : null;
+        const endD   = data.sessionEnd   ? new Date(data.sessionEnd   + 'T00:00:00') : null;
+        if (startD && refDate < startD) refDate = startD;
+        if (endD   && refDate > endD)   refDate = endD;
+        currentWeekStart = new Date(refDate);
+        currentWeekStart.setDate(refDate.getDate() - refDate.getDay());
+      }
 
       // Render both views
       renderWeekView(data);
       renderDayView(data);
       bindDayNav(data.schedule);
       bindMonthNav();
+      bindWeekNav();
 
       // Apply any pre-existing filter state (all on by default)
       applyFilters();
