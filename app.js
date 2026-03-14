@@ -27,7 +27,7 @@
   // with padding added at runtime.
   const TIMELINE_PAD_BEFORE = 15; // minutes before first class
   const TIMELINE_PAD_AFTER  = 15; // minutes after last class
-  const HOUR_HEIGHT_PX      = 80; // pixels per 60 minutes in week view
+  const HOUR_HEIGHT_PX      = 110; // pixels per 60 minutes in week view
 
   // Discipline → logo file (in logos/ folder)
   const DISC_LOGOS = {
@@ -120,6 +120,14 @@
         .join('<span class="group-sep" aria-hidden="true"></span>');
     }
     return esc(name);
+  }
+
+  /**
+   * Detect mixed courses (superkids + enfants jiujitsu in same class).
+   */
+  function isMixedCourse(cls) {
+    const n = (cls.name || '').toUpperCase();
+    return n.includes('SUPERKIDS') && n.includes('ENFANTS');
   }
 
   /**
@@ -239,6 +247,7 @@
           description: c.description || '',
           ageGroup: c.age_group || '',
           discipline: c.discipline,
+          type: c.type || '',
           duration: calcDurationStr(c.start_time, c.end_time),
           dateRangeId: c.date_range_id || '',
         })),
@@ -472,8 +481,12 @@
       if (data.contact.address) {
         const addrWrap = document.getElementById('contact-address');
         const addrText = document.getElementById('contact-address-text');
+        const addrLink = document.getElementById('contact-address-link');
         if (addrWrap && addrText) {
           addrText.textContent = data.contact.address;
+          if (addrLink) {
+            addrLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.contact.address)}`;
+          }
           addrWrap.classList.remove('hidden');
         }
       }
@@ -742,38 +755,21 @@
     // --- DAY HEADERS ---
     const DAY_ORDER = [0, 1, 2, 3, 4, 5, 6];
 
-    // Use stored week position, or compute initial one
-    const weekStart = currentWeekStart;
-
-    function getDateForDayIndex(di) {
-      const d = new Date(weekStart);
-      d.setDate(weekStart.getDate() + di);
-      return d;
-    }
-
     // Header row HTML
     const labelHeaderHtml = `<div class="timeline-label-cell" aria-hidden="true"></div>`;
 
     const dayHeadersHtml = DAY_ORDER.map(di => {
       const dayData  = schedule.find(d => d.dayIndex === di);
       const isToday  = di === todayJS;
-      const dateObj  = getDateForDayIndex(di);
-      const dateNum  = dateObj.getDate();
-      const dateYMD  = toYMD(dateObj);
-      const holiday  = getHolidayForDate(dateYMD, holidays);
-
-      const todayCls = isToday ? ' today-col' : '';
       const shortDay = dayData ? esc(dayData.dayShort) : ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][di];
-
-      const holidayBadge = holiday
-        ? `<span class="holiday-badge" title="${esc(holiday.name)}">Congé</span>`
-        : '';
+      const fullDay  = dayData ? esc(dayData.day) : ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'][di];
+      const todayCls = isToday ? ' today-col' : '';
+      const classCount = dayData && dayData.classes ? dayData.classes.length : 0;
 
       return `
-        <div class="week-day-header${todayCls}" aria-label="${shortDay} ${dateNum}${isToday ? ' — aujourd\'hui' : ''}">
+        <div class="week-day-header${todayCls}" aria-label="${fullDay}${isToday ? ' — aujourd\'hui' : ''}">
           ${shortDay}
-          <span class="day-date-num">${dateNum}</span>
-          ${holidayBadge}
+          ${classCount > 0 ? `<span class="day-class-count">${classCount} cours</span>` : ''}
         </div>`;
     }).join('');
 
@@ -794,24 +790,9 @@
     const dayColsHtml = DAY_ORDER.map(di => {
       const dayData = schedule.find(d => d.dayIndex === di);
       const isToday = di === todayJS;
-      const dateObj = getDateForDayIndex(di);
-      const dateYMD = toYMD(dateObj);
-      const holiday = getHolidayForDate(dateYMD, holidays);
 
-      // Filter classes: only show if this date is within the course's date range
-      // (or within session dates for courses without a specific range)
-      const dateRanges = data.dateRanges || [];
-      const filteredClasses = dayData && dayData.classes
-        ? dayData.classes.filter(cls => {
-            let start = sessionStart || '';
-            let end   = sessionEnd || '';
-            if (cls.dateRangeId) {
-              const dr = dateRanges.find(r => r.id === cls.dateRangeId);
-              if (dr) { start = dr.startDate; end = dr.endDate; }
-            }
-            return dateYMD >= start && dateYMD <= end;
-          })
-        : [];
+      // Week view = "semaine type" (template) — show all courses, no date filtering
+      const filteredClasses = dayData && dayData.classes ? dayData.classes : [];
       const hasClasses = filteredClasses.length > 0;
 
       const todayCls = isToday ? ' week-col-today' : '';
@@ -825,8 +806,8 @@
 
       // Class blocks
       let blocksHtml = '';
-      if (holiday) {
-        // Show a subtle holiday overlay
+      if (false) {
+        // Holiday overlay (disabled in template mode — holidays show in month view)
         blocksHtml = `
           <div style="
             position:absolute; inset:4px;
@@ -849,11 +830,13 @@
           const heightPx  = minsToPixels(endMins, minMins) - topPx;
           const hiddenCls = activeFilters.has(cls.discipline) ? '' : ' discipline-hidden';
           const ariaHidden = hiddenCls ? ' aria-hidden="true"' : '';
+          const mixed = isMixedCourse(cls);
 
           return `
             <div
-              class="timeline-block${hiddenCls}"
+              class="timeline-block${hiddenCls}${mixed ? ' mixed-sk-jj' : ''}"
               data-discipline="${esc(cls.discipline)}"
+              data-type="${esc(cls.type || '')}"
               style="top:${topPx}px; height:${heightPx}px;"
               role="listitem"
               aria-label="${esc(cls.name)}, ${esc(cls.ageGroup)}, ${esc(cls.time)}"
@@ -887,31 +870,10 @@
     }).join('');
 
     // --- WEEK TITLE ---
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-
     const titleEl = document.getElementById('week-title');
     if (titleEl) {
-      const monthNames = ['janvier','février','mars','avril','mai','juin',
-                          'juillet','août','septembre','octobre','novembre','décembre'];
-      // If week spans two months, show both
-      const startMonth = monthNames[weekStart.getMonth()];
-      const endMonth   = monthNames[weekEnd.getMonth()];
-      const startYear  = weekStart.getFullYear();
-      const endYear    = weekEnd.getFullYear();
-
-      let monthLabel;
-      if (startMonth === endMonth) {
-        monthLabel = `${startMonth} ${startYear}`;
-      } else if (startYear === endYear) {
-        monthLabel = `${startMonth} – ${endMonth} ${startYear}`;
-      } else {
-        monthLabel = `${startMonth} ${startYear} – ${endMonth} ${endYear}`;
-      }
-
       titleEl.innerHTML = `
-        <div class="week-title-month">${monthLabel}</div>
-        <div class="week-title-range">Semaine du ${weekStart.getDate()} au ${weekEnd.getDate()}</div>`;
+        <div class="week-title-month">Semaine type</div>`;
     }
 
     // --- WEEK GRID ---
@@ -1015,15 +977,17 @@
     const cards = classes.map(cls => {
       const hiddenCls  = activeFilters.has(cls.discipline) ? '' : ' discipline-hidden';
       const ariaHidden = hiddenCls ? ' aria-hidden="true"' : '';
+      const mixed = isMixedCourse(cls);
 
       return `
         <article
-          class="day-card-v2 flex${hiddenCls}"
+          class="day-card-v2 flex${hiddenCls}${mixed ? ' mixed-sk-jj' : ''}"
           data-discipline="${esc(cls.discipline)}"
+          data-type="${esc(cls.type || '')}"
           role="listitem"
           ${ariaHidden}
           aria-label="${esc(cls.name)}, ${esc(cls.ageGroup)}, ${esc(cls.time)}">
-          <div class="dc-left-border ${esc(cls.discipline)}" aria-hidden="true"></div>
+          <div class="dc-left-border ${esc(cls.discipline)}${mixed ? ' mixed-border' : ''}" aria-hidden="true"></div>
           ${DISC_LOGOS[cls.discipline] ? `<img src="${DISC_LOGOS[cls.discipline]}" alt="" class="dc-logo ${esc(cls.discipline)}" loading="lazy">` : ''}
           <div class="dc-body">
             <div class="dc-header">
@@ -1142,7 +1106,12 @@
     const classes = getClassesForDate(dateYmd, schedule, holidays);
     const discs = new Set();
     for (const cls of classes) {
-      discs.add(cls.discipline);
+      // Muay Thai enfants gets its own visual key (orange dot)
+      if (cls.discipline === 'muaythai' && cls.type === 'Enfants') {
+        discs.add('muaythai-enfants');
+      } else {
+        discs.add(cls.discipline);
+      }
     }
     return discs;
   }
@@ -1212,10 +1181,13 @@
       if (isSelected) cellClasses += ' month-cell-selected';
 
       // Discipline dots (respecting active filters)
+      const VISUAL_COLORS = { 'muaythai-enfants': '#ea580c' };
       const discDots = Array.from(discs).map(disc => {
-        const color    = disciplines[disc] ? disciplines[disc].color : '#888';
-        const hiddenCls = activeFilters.has(disc) ? '' : ' discipline-hidden';
-        return `<span class="month-indicator-dot${hiddenCls}" data-discipline="${esc(disc)}" style="background:${esc(color)};" aria-hidden="true"></span>`;
+        const color = VISUAL_COLORS[disc] || (disciplines[disc] ? disciplines[disc].color : '#888');
+        // muaythai-enfants should filter with muaythai
+        const filterKey = disc === 'muaythai-enfants' ? 'muaythai' : disc;
+        const hiddenCls = activeFilters.has(filterKey) ? '' : ' discipline-hidden';
+        return `<span class="month-indicator-dot${hiddenCls}" data-discipline="${esc(filterKey)}" style="background:${esc(color)};" aria-hidden="true"></span>`;
       }).join('');
 
       // Star for events
@@ -1356,9 +1328,10 @@
         const hiddenCls  = activeFilters.has(cls.discipline) ? '' : ' discipline-hidden';
         const ariaHidden = hiddenCls ? ' aria-hidden="true"' : '';
         const color      = disciplines[cls.discipline] ? disciplines[cls.discipline].color : '#888';
+        const mixed = isMixedCourse(cls);
 
         content += `
-          <div class="month-detail-card${hiddenCls}" data-discipline="${esc(cls.discipline)}" ${ariaHidden} role="listitem">
+          <div class="month-detail-card${hiddenCls}${mixed ? ' mixed-sk-jj' : ''}" data-discipline="${esc(cls.discipline)}" data-type="${esc(cls.type || '')}" ${ariaHidden} role="listitem">
             ${DISC_LOGOS[cls.discipline] ? `<img src="${DISC_LOGOS[cls.discipline]}" alt="" class="month-detail-logo ${esc(cls.discipline)}" loading="lazy">` : ''}
             <div class="month-detail-card-time" style="color:${esc(color)};">
               <span class="month-detail-start">${esc(cls.startTime)}</span>

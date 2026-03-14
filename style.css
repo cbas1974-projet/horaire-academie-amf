@@ -14,6 +14,8 @@
   --gold-light:    #e6c84e;
   --red:           #dc2626;
   --red-light:     #f87171;
+  --orange:        #ea580c;
+  --orange-light:  #fb923c;
   --cyan:          #22d3ee;
   --cyan-light:    #67e8f9;
   --royal:         #2563eb;
@@ -491,14 +493,20 @@ body {
   border-color: rgba(220, 38, 38, 0.4);
 }
 
+/* Muay Thai enfants → orange */
+.timeline-block[data-discipline="muaythai"][data-type="Enfants"] {
+  background: rgba(234, 88, 12, 0.2);
+  border-color: rgba(234, 88, 12, 0.4);
+}
+
 .timeline-block[data-discipline="superkids"] {
   background: rgba(34, 211, 238, 0.18);
   border-color: rgba(34, 211, 238, 0.35);
 }
 
 .timeline-block[data-discipline="gracie"] {
-  background: rgba(37, 99, 235, 0.2);
-  border-color: rgba(37, 99, 235, 0.4);
+  background: rgba(30, 64, 175, 0.35);
+  border-color: rgba(37, 99, 235, 0.5);
 }
 
 .tb-time {
@@ -512,8 +520,9 @@ body {
 
 .timeline-block[data-discipline="jiujitsu"] .tb-time    { color: var(--gold-light); }
 .timeline-block[data-discipline="muaythai"] .tb-time    { color: var(--red-light); }
+.timeline-block[data-discipline="muaythai"][data-type="Enfants"] .tb-time { color: var(--orange-light); }
 .timeline-block[data-discipline="superkids"] .tb-time   { color: var(--cyan-light); }
-.timeline-block[data-discipline="gracie"] .tb-time      { color: var(--royal-light); }
+.timeline-block[data-discipline="gracie"] .tb-time      { color: #93bbfd; }
 
 .tb-name {
   font-size: 0.6rem;
@@ -528,8 +537,9 @@ body {
 
 .timeline-block[data-discipline="jiujitsu"] .tb-name    { color: var(--gold-light); }
 .timeline-block[data-discipline="muaythai"] .tb-name    { color: var(--red-light); }
+.timeline-block[data-discipline="muaythai"][data-type="Enfants"] .tb-name { color: var(--orange-light); }
 .timeline-block[data-discipline="superkids"] .tb-name   { color: var(--cyan-light); }
-.timeline-block[data-discipline="gracie"] .tb-name      { color: var(--royal-light); }
+.timeline-block[data-discipline="gracie"] .tb-name      { color: #dbeafe; }
 
 .tb-age {
   font-size: 0.6rem;
@@ -538,6 +548,14 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.day-class-count {
+  display: block;
+  font-size: 0.55rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  opacity: 0.7;
 }
 
 /* Holiday indicator on day column header */
@@ -637,6 +655,7 @@ body {
 
 .dc-left-border.jiujitsu  { background: var(--gold); }
 .dc-left-border.muaythai  { background: var(--red); }
+[data-type="Enfants"] .dc-left-border.muaythai { background: var(--orange); }
 .dc-left-border.superkids { background: var(--cyan); }
 .dc-left-border.gracie    { background: var(--royal); }
 
@@ -665,6 +684,7 @@ body {
 
 .dc-badge.jiujitsu  { background: rgba(201, 162, 39, 0.15); color: var(--gold-light); }
 .dc-badge.muaythai  { background: rgba(220, 38, 38, 0.15);  color: var(--red-light); }
+[data-type="Enfants"] .dc-badge.muaythai { background: rgba(234, 88, 12, 0.15); color: var(--orange-light); }
 .dc-badge.superkids { background: rgba(34, 211, 238, 0.15); color: var(--cyan-light); }
 .dc-badge.gracie    { background: rgba(37, 99, 235, 0.15); color: var(--royal-light); }
 
@@ -777,6 +797,8 @@ body {
    PRINT STYLES
    ============================================================ */
 
+@page { margin: 1cm; }
+
 @media print {
   body {
     background: white !important;
@@ -818,7 +840,6 @@ body {
   .dc-desc    { color: #666 !important; }
   .dc-time    { color: #555 !important; }
 
-  .week-view-wrapper,
   .view-toggle,
   .announcement-bar,
   .countdown-bar,
@@ -830,14 +851,75 @@ body {
     display: none !important;
   }
 
-  /* Force day view to be visible for print */
-  #view-jour {
+  /* Print whichever view is currently active (not hidden) */
+  #view-semaine.hidden,
+  #view-jour.hidden,
+  #view-mois.hidden,
+  #view-session.hidden {
+    display: none !important;
+  }
+
+  #view-semaine:not(.hidden),
+  #view-jour:not(.hidden),
+  #view-mois:not(.hidden),
+  #view-session:not(.hidden) {
     display: block !important;
   }
 
-  #view-semaine {
+  /* Week view print styles */
+  .week-view-wrapper {
+    overflow: visible !important;
+    -webkit-overflow-scrolling: auto;
+  }
+
+  .week-nav {
     display: none !important;
   }
+
+  .week-grid {
+    transform: none !important;
+  }
+
+  .timeline-block {
+    color: black !important;
+    border: 1px solid #999 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .timeline-block[data-discipline="jiujitsu"] {
+    background: rgba(201, 162, 39, 0.15) !important;
+  }
+  .timeline-block[data-discipline="muaythai"] {
+    background: rgba(220, 38, 38, 0.15) !important;
+  }
+  .timeline-block[data-discipline="superkids"] {
+    background: rgba(34, 211, 238, 0.12) !important;
+  }
+  .timeline-block[data-discipline="gracie"] {
+    background: rgba(37, 99, 235, 0.15) !important;
+  }
+  .timeline-block.mixed-sk-jj {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.15) 45%, rgba(201, 162, 39, 0.15) 55%) !important;
+  }
+
+  .tb-time, .tb-name, .tb-age {
+    color: #222 !important;
+  }
+
+  .week-block-watermark {
+    opacity: 0.08 !important;
+  }
+
+  .week-day-header {
+    color: black !important;
+    background: #f5f5f5 !important;
+    border: 1px solid #ccc !important;
+  }
+
+  .week-hour-line { border-color: #ddd !important; }
+  .week-hour-line.full { border-color: #bbb !important; }
+  .timeline-tick-label { color: #666 !important; }
 
   .hero-accent-line {
     background: #333 !important;
@@ -852,9 +934,9 @@ body {
     text-decoration: underline;
   }
 
-  #view-mois,
-  #view-session {
-    display: block !important;
+  /* Month view print */
+  .month-nav {
+    display: none !important;
   }
 
   .month-grid {
@@ -1568,6 +1650,33 @@ body {
 .disc-logo.superkids { border-color: var(--cyan); }
 .disc-logo.gracie    { border-color: var(--royal); }
 
+/* ---- Mixed courses (superkids + enfants jiujitsu) — diagonal split ---- */
+
+/* Week view block — diagonal gradient */
+.timeline-block.mixed-sk-jj {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.25) 45%, rgba(201, 162, 39, 0.25) 55%) !important;
+  border-color: rgba(201, 162, 39, 0.4) !important;
+}
+.timeline-block.mixed-sk-jj .tb-time { color: var(--gold-light); }
+.timeline-block.mixed-sk-jj .tb-name { color: #f0f0f0; }
+
+/* Day view card — diagonal left border */
+.dc-left-border.mixed-border {
+  background: linear-gradient(180deg, var(--cyan) 50%, var(--gold) 50%) !important;
+}
+
+/* Day view card — diagonal top accent */
+.day-card-v2.mixed-sk-jj {
+  border-top: 2px solid transparent;
+  border-image: linear-gradient(90deg, var(--cyan), var(--gold)) 1;
+}
+
+/* Month detail card — left accent */
+.month-detail-card.mixed-sk-jj {
+  border-left: 3px solid transparent;
+  border-image: linear-gradient(180deg, var(--cyan), var(--gold)) 1;
+}
+
 /* Week view — logo as centered watermark */
 .week-block-watermark {
   position: absolute;
@@ -1596,6 +1705,7 @@ body {
 
 .dc-logo.jiujitsu  { border: 2px solid var(--gold); }
 .dc-logo.muaythai  { border: 2px solid var(--red); }
+[data-type="Enfants"] .dc-logo.muaythai { border-color: var(--orange); }
 .dc-logo.superkids { border: 2px solid var(--cyan); }
 .dc-logo.gracie    { border: 2px solid var(--royal); }
 

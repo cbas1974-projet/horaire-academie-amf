@@ -184,13 +184,11 @@
       aria-label="Vue semaine de l'horaire"
       role="region">
 
-      <!-- Week navigation header -->
-      <div class="week-nav no-print" aria-label="Navigation entre les semaines">
-        <button id="week-prev" class="day-nav-btn" aria-label="Semaine précédente">&#8249;</button>
+      <!-- Week title -->
+      <div class="week-nav no-print" aria-label="Semaine type">
         <div class="week-title-block" id="week-title">
-          <!-- Week range populated by JS -->
+          <!-- Populated by JS -->
         </div>
-        <button id="week-next" class="day-nav-btn" aria-label="Semaine suivante">&#8250;</button>
       </div>
 
       <!-- Week grid populated by JS -->
@@ -337,7 +335,13 @@
           </a>
         </div>
         <div id="contact-address" class="hidden">
-          <p id="contact-address-text" class="text-gray-400 text-sm mt-1"></p>
+          <a id="contact-address-link"
+             href="#"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="text-gray-400 hover:text-white transition-colors text-sm mt-1 underline underline-offset-4 block">
+            <span id="contact-address-text"></span>
+          </a>
         </div>
       </div>
 
