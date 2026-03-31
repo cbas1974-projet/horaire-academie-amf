@@ -83,6 +83,7 @@
           <button class="tab-btn tab-inactive px-4 py-3 text-sm whitespace-nowrap transition border-b-2" data-tab="evenements" role="tab">Événements</button>
           <button class="tab-btn tab-inactive px-4 py-3 text-sm whitespace-nowrap transition border-b-2" data-tab="parametres" role="tab">Paramètres</button>
           <button class="tab-btn tab-inactive px-4 py-3 text-sm whitespace-nowrap transition border-b-2" data-tab="actions" role="tab">Actions</button>
+          <button class="tab-btn tab-inactive px-4 py-3 text-sm whitespace-nowrap transition border-b-2" data-tab="sessions" role="tab">Sessions</button>
         </nav>
       </div>
     </header>
@@ -272,6 +273,32 @@
             <li>Netlify redéploie automatiquement (~30 secondes)</li>
           </ol>
         </div>
+      </section>
+
+      <!-- TAB: SESSIONS -->
+      <section id="tab-sessions" class="tab-content hidden">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-gray-900">Gestion des sessions</h2>
+          <button id="refreshSessionsBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition">Rafraîchir</button>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">La session <strong>active</strong> est celle affichée sur le site public et chargée dans cet admin. Une seule session peut être active à la fois.</p>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-gray-50 border-b border-gray-200">
+                <th class="text-left px-4 py-3 font-semibold text-gray-600">Nom</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-600">Début</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-600">Fin</th>
+                <th class="text-center px-4 py-3 font-semibold text-gray-600">Statut</th>
+                <th class="text-right px-4 py-3 font-semibold text-gray-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="sessionsTableBody">
+              <tr><td colspan="5" class="text-center text-gray-400 py-8">Chargement…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="sessionsError" class="hidden mt-4 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700"></div>
       </section>
 
     </main>

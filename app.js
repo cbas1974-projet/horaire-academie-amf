@@ -706,7 +706,7 @@
   function switchView(view) {
     currentView = view;
 
-    const views = ['semaine', 'jour', 'mois', 'session'];
+    const views = ['semaine', 'jour', 'mois', 'session', 'admin'];
 
     // Hide all sections, deactivate all buttons
     views.forEach(v => {
@@ -732,6 +732,11 @@
     if (appData) {
       if (view === 'mois') renderMonthView(appData);
       if (view === 'session') renderSessionView(appData);
+    }
+
+    // Admin: if already authed, re-render panel on switch
+    if (view === 'admin' && adminAuthed) {
+      adminLoadSessions().then(() => renderAdminPanel());
     }
   }
 
@@ -1678,6 +1683,468 @@
   }
 
   /* ============================================================
+     ADMIN — SESSIONS MANAGEMENT
+     ============================================================ */
+
+  const ADMIN_PASSWORD = 'amf2026admin';
+  const ARCHIVE_PREFIX = '[ARCHIVE] '; // Workaround: no is_archived column yet — detect via name prefix
+  let adminAuthed = false;
+  let adminSessions = [];   // all sessions from Supabase
+  let adminCurrentIdx = 0;  // index into adminSessions for the navigator
+
+  /**
+   * Check if a session is archived (workaround: name starts with "[ARCHIVE] ").
+   * When the is_archived column exists in Supabase, this will use it instead.
+   */
+  function isSessionArchived(sess) {
+    // Prefer DB column if present
+    if (typeof sess.is_archived === 'boolean') return sess.is_archived;
+    // Fallback: name prefix convention
+    return (sess.name || '').startsWith(ARCHIVE_PREFIX);
+  }
+
+  /**
+   * Get display name (strips archive prefix if present).
+   */
+  function sessionDisplayName(sess) {
+    const name = sess.name || sess.id;
+    return name.startsWith(ARCHIVE_PREFIX) ? name.slice(ARCHIVE_PREFIX.length) : name;
+  }
+
+  /**
+   * Supabase POST/PATCH/DELETE helper for admin writes.
+   */
+  async function sbWrite(table, method, body, query) {
+    const url = `${SUPABASE_URL}/rest/v1/${table}${query || ''}`;
+    const headers = {
+      'apikey': SUPABASE_ANON,
+      'Authorization': `Bearer ${SUPABASE_ANON}`,
+      'Content-Type': 'application/json',
+      'Accept-Profile': 'dojo',
+      'Content-Profile': 'dojo',
+      'Prefer': method === 'POST'
+        ? 'resolution=merge-duplicates,return=representation'
+        : 'return=representation',
+    };
+    const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`${method} ${table}: ${res.status} — ${text}`);
+    }
+    const ct = res.headers.get('content-type') || '';
+    return ct.includes('json') ? res.json() : null;
+  }
+
+  /**
+   * Fetch all sessions from Supabase, sorted by start_date desc.
+   */
+  async function adminLoadSessions() {
+    adminSessions = await sbQuery('schedule_sessions', 'select=*&order=start_date.desc');
+    if (!adminSessions.length) {
+      adminSessions = [];
+    }
+  }
+
+  /**
+   * Get the session status label + badge class.
+   */
+  function getSessionStatus(sess) {
+    if (isSessionArchived(sess)) return { label: 'Archive', cls: 'admin-badge-archived' };
+    if (sess.is_current)  return { label: 'Actif', cls: 'admin-badge-active' };
+    // Future = "En construction"
+    const now = new Date();
+    const start = sess.start_date ? new Date(sess.start_date + 'T00:00:00') : null;
+    if (start && start > now) return { label: 'En construction', cls: 'admin-badge-building' };
+    return { label: 'Inactif', cls: 'admin-badge-building' };
+  }
+
+  /**
+   * Format date for admin display.
+   */
+  function adminFormatDate(d) {
+    if (!d) return '—';
+    return new Date(d + 'T00:00:00').toLocaleDateString('fr-CA', {
+      day: 'numeric', month: 'long', year: 'numeric'
+    });
+  }
+
+  /**
+   * Render the admin panel for the current session index.
+   */
+  function renderAdminPanel() {
+    if (!adminSessions.length) {
+      document.getElementById('admin-session-info').innerHTML =
+        '<p class="admin-session-name" style="color:var(--text-muted);">Aucune session</p>';
+      document.getElementById('admin-status-row').innerHTML = '';
+      document.getElementById('admin-detail-card').innerHTML =
+        '<p style="text-align:center;color:var(--text-muted);padding:1rem;">Creez votre premiere session.</p>';
+      document.getElementById('admin-actions').innerHTML =
+        '<button class="admin-btn-primary" onclick="window.__adminCreate()">+ Nouvelle session</button>';
+      document.getElementById('admin-session-prev').disabled = true;
+      document.getElementById('admin-session-next').disabled = true;
+      return;
+    }
+
+    // Clamp index
+    if (adminCurrentIdx < 0) adminCurrentIdx = 0;
+    if (adminCurrentIdx >= adminSessions.length) adminCurrentIdx = adminSessions.length - 1;
+
+    const sess = adminSessions[adminCurrentIdx];
+    const status = getSessionStatus(sess);
+
+    // Nav arrows
+    document.getElementById('admin-session-prev').disabled = adminCurrentIdx <= 0;
+    document.getElementById('admin-session-next').disabled = adminCurrentIdx >= adminSessions.length - 1;
+
+    // Session info
+    document.getElementById('admin-session-info').innerHTML = `
+      <div class="admin-session-name">${esc(sessionDisplayName(sess))}</div>
+      <div class="admin-session-dates">${adminFormatDate(sess.start_date)} — ${adminFormatDate(sess.end_date)}</div>
+      <div class="admin-session-counter">${adminCurrentIdx + 1} / ${adminSessions.length}</div>`;
+
+    // Status badges
+    document.getElementById('admin-status-row').innerHTML =
+      `<span class="admin-badge ${status.cls}">${status.label}</span>` +
+      (sess.is_current ? '<span class="admin-badge admin-badge-active">&#9679; Session courante</span>' : '');
+
+    // Count courses for this session (approximate — courses may not be session-scoped)
+    const courseCount = appData ? appData.schedule.reduce((sum, d) => sum + d.classes.length, 0) : '?';
+
+    // Detail card
+    const isArchived = isSessionArchived(sess);
+    document.getElementById('admin-detail-card').innerHTML = `
+      <div class="admin-detail-row">
+        <span class="admin-detail-label">ID</span>
+        <span class="admin-detail-value" style="font-family:monospace;font-size:0.8rem;">${esc(sess.id)}</span>
+      </div>
+      <div class="admin-detail-row">
+        <span class="admin-detail-label">Nom</span>
+        <span class="admin-detail-value">${esc(sessionDisplayName(sess))}</span>
+      </div>
+      <div class="admin-detail-row">
+        <span class="admin-detail-label">Debut</span>
+        <span class="admin-detail-value">${adminFormatDate(sess.start_date)}</span>
+      </div>
+      <div class="admin-detail-row">
+        <span class="admin-detail-label">Fin</span>
+        <span class="admin-detail-value">${adminFormatDate(sess.end_date)}</span>
+      </div>
+      <div class="admin-detail-row">
+        <span class="admin-detail-label">Cours</span>
+        <span class="admin-detail-value">${courseCount} cours/semaine</span>
+      </div>
+      <div class="admin-detail-row">
+        <span class="admin-detail-label">Cree le</span>
+        <span class="admin-detail-value">${sess.created_at ? new Date(sess.created_at).toLocaleDateString('fr-CA') : '—'}</span>
+      </div>
+      ${isArchived ? '<div style="text-align:center;padding:0.5rem 0;color:var(--text-muted);font-size:0.8rem;font-style:italic;">Session archivee — lecture seule</div>' : ''}`;
+
+    // Actions
+    const actions = [];
+    actions.push('<button class="admin-btn-primary" onclick="window.__adminCreate()">+ Nouvelle session</button>');
+    actions.push('<button class="admin-btn-secondary" onclick="window.__adminDuplicate()">&#128203; Dupliquer</button>');
+
+    if (!isArchived) {
+      if (sess.is_current) {
+        actions.push('<button class="admin-btn-secondary" onclick="window.__adminToggleActive()" style="border-color:var(--red);color:var(--red-light);">Desactiver</button>');
+      } else {
+        actions.push('<button class="admin-btn-primary" onclick="window.__adminToggleActive()" style="background:#22c55e;">&#9889; Activer</button>');
+      }
+      actions.push('<button class="admin-btn-secondary" onclick="window.__adminEdit()">&#9998; Modifier</button>');
+      actions.push('<button class="admin-btn-danger" onclick="window.__adminArchive()">&#128451; Archiver</button>');
+    }
+
+    document.getElementById('admin-actions').innerHTML = actions.join('');
+  }
+
+  /**
+   * Show admin toast notification.
+   */
+  function adminToast(msg) {
+    let toast = document.querySelector('.admin-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.className = 'admin-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  /**
+   * Show confirmation dialog. Returns a promise that resolves true/false.
+   */
+  function adminConfirm(message) {
+    return new Promise((resolve) => {
+      const overlay = document.getElementById('admin-confirm-overlay');
+      document.getElementById('admin-confirm-msg').textContent = message;
+      overlay.classList.remove('hidden');
+
+      const yes = document.getElementById('admin-confirm-yes');
+      const no  = document.getElementById('admin-confirm-no');
+
+      function cleanup() {
+        overlay.classList.add('hidden');
+        yes.replaceWith(yes.cloneNode(true));
+        no.replaceWith(no.cloneNode(true));
+      }
+
+      document.getElementById('admin-confirm-yes').addEventListener('click', () => { cleanup(); resolve(true); });
+      document.getElementById('admin-confirm-no').addEventListener('click', () => { cleanup(); resolve(false); });
+    });
+  }
+
+  /**
+   * Validate session form: dates, overlap.
+   * Returns { valid, error }.
+   */
+  function validateSessionForm(name, startDate, endDate, excludeId) {
+    if (!name.trim()) return { valid: false, error: 'Le nom est requis.' };
+    if (!startDate || !endDate) return { valid: false, error: 'Les deux dates sont requises.' };
+    if (startDate >= endDate) return { valid: false, error: 'La date de debut doit etre avant la date de fin.' };
+
+    // Check overlap with other sessions
+    for (const s of adminSessions) {
+      if (s.id === excludeId) continue;
+      if (isSessionArchived(s)) continue;
+      if (startDate <= s.end_date && endDate >= s.start_date) {
+        return {
+          valid: false,
+          error: `Chevauchement avec "${s.name}" (${s.start_date} → ${s.end_date}). Verifiez les dates.`
+        };
+      }
+    }
+
+    return { valid: true, error: null };
+  }
+
+  /**
+   * Generate a slug ID from session name.
+   */
+  function slugify(str) {
+    return str.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
+  /**
+   * Show the session create/edit form.
+   */
+  function showSessionForm(mode, sess) {
+    const container = document.getElementById('admin-form-container');
+    const title = document.getElementById('admin-form-title');
+    const submit = document.getElementById('admin-form-submit');
+    const nameInput = document.getElementById('admin-f-name');
+    const startInput = document.getElementById('admin-f-start');
+    const endInput = document.getElementById('admin-f-end');
+    const errorEl = document.getElementById('admin-form-error');
+
+    errorEl.classList.add('hidden');
+    container.classList.remove('hidden');
+
+    if (mode === 'create') {
+      title.textContent = 'Nouvelle session';
+      submit.textContent = 'Creer';
+      nameInput.value = '';
+      startInput.value = '';
+      endInput.value = '';
+    } else if (mode === 'edit') {
+      title.textContent = 'Modifier la session';
+      submit.textContent = 'Sauvegarder';
+      nameInput.value = sessionDisplayName(sess);
+      startInput.value = sess.start_date || '';
+      endInput.value = sess.end_date || '';
+    } else if (mode === 'duplicate') {
+      title.textContent = 'Dupliquer la session';
+      submit.textContent = 'Dupliquer';
+      nameInput.value = sessionDisplayName(sess) + ' (copie)';
+      startInput.value = '';
+      endInput.value = '';
+    }
+
+    // Store mode in form dataset
+    const form = document.getElementById('admin-session-form');
+    form.dataset.mode = mode;
+    form.dataset.editId = sess ? sess.id : '';
+
+    nameInput.focus();
+    container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /**
+   * Bind all admin event listeners.
+   */
+  function bindAdmin() {
+    // Login form
+    document.getElementById('admin-login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const pw = document.getElementById('admin-password').value;
+      if (pw === ADMIN_PASSWORD) {
+        adminAuthed = true;
+        document.getElementById('admin-gate').classList.add('hidden');
+        document.getElementById('admin-panel').classList.remove('hidden');
+        adminLoadSessions().then(() => {
+          // Try to set current session as the initial view
+          const currentIdx = adminSessions.findIndex(s => s.is_current);
+          adminCurrentIdx = currentIdx >= 0 ? currentIdx : 0;
+          renderAdminPanel();
+        });
+      } else {
+        document.getElementById('admin-login-error').classList.remove('hidden');
+        document.getElementById('admin-password').value = '';
+        document.getElementById('admin-password').focus();
+      }
+    });
+
+    // Nav arrows
+    document.getElementById('admin-session-prev').addEventListener('click', () => {
+      if (adminCurrentIdx > 0) {
+        adminCurrentIdx--;
+        renderAdminPanel();
+      }
+    });
+    document.getElementById('admin-session-next').addEventListener('click', () => {
+      if (adminCurrentIdx < adminSessions.length - 1) {
+        adminCurrentIdx++;
+        renderAdminPanel();
+      }
+    });
+
+    // Form cancel
+    document.getElementById('admin-form-cancel').addEventListener('click', () => {
+      document.getElementById('admin-form-container').classList.add('hidden');
+    });
+
+    // Form submit
+    document.getElementById('admin-session-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const mode = form.dataset.mode;
+      const editId = form.dataset.editId;
+      const name = document.getElementById('admin-f-name').value.trim();
+      const startDate = document.getElementById('admin-f-start').value;
+      const endDate = document.getElementById('admin-f-end').value;
+      const errorEl = document.getElementById('admin-form-error');
+
+      const excludeId = mode === 'edit' ? editId : null;
+      const check = validateSessionForm(name, startDate, endDate, excludeId);
+      if (!check.valid) {
+        errorEl.textContent = check.error;
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      errorEl.classList.add('hidden');
+
+      try {
+        if (mode === 'create' || mode === 'duplicate') {
+          const newId = slugify(name) || ('session-' + Date.now());
+          await sbWrite('schedule_sessions', 'POST', [{
+            id: newId,
+            name: name,
+            start_date: startDate,
+            end_date: endDate,
+            is_current: false,
+          }]);
+          adminToast('Session creee!');
+        } else if (mode === 'edit') {
+          await sbWrite('schedule_sessions', 'PATCH', {
+            name: name,
+            start_date: startDate,
+            end_date: endDate,
+          }, `?id=eq.${editId}`);
+          adminToast('Session modifiee!');
+        }
+
+        // Reload
+        await adminLoadSessions();
+        if (mode === 'create' || mode === 'duplicate') {
+          adminCurrentIdx = 0; // newest first
+        }
+        renderAdminPanel();
+        document.getElementById('admin-form-container').classList.add('hidden');
+      } catch (err) {
+        errorEl.textContent = 'Erreur Supabase: ' + err.message;
+        errorEl.classList.remove('hidden');
+      }
+    });
+
+    // Expose global action handlers (called from onclick in rendered HTML)
+    window.__adminCreate = () => showSessionForm('create', null);
+
+    window.__adminEdit = () => {
+      const sess = adminSessions[adminCurrentIdx];
+      if (sess) showSessionForm('edit', sess);
+    };
+
+    window.__adminDuplicate = () => {
+      const sess = adminSessions[adminCurrentIdx];
+      if (sess) showSessionForm('duplicate', sess);
+    };
+
+    window.__adminToggleActive = async () => {
+      const sess = adminSessions[adminCurrentIdx];
+      if (!sess) return;
+
+      if (sess.is_current) {
+        // Deactivate
+        const ok = await adminConfirm(`Desactiver la session "${sessionDisplayName(sess)}"?\n\nLe site n'affichera plus aucune session active.`);
+        if (!ok) return;
+        try {
+          await sbWrite('schedule_sessions', 'PATCH', { is_current: false }, `?id=eq.${sess.id}`);
+          adminToast('Session desactivee');
+          await adminLoadSessions();
+          renderAdminPanel();
+        } catch (err) {
+          adminToast('Erreur: ' + err.message);
+        }
+      } else {
+        // Activate — deactivate all others first
+        const ok = await adminConfirm(`Activer la session "${sessionDisplayName(sess)}"?\n\nToutes les autres sessions seront desactivees.`);
+        if (!ok) return;
+        try {
+          // Deactivate all
+          await sbWrite('schedule_sessions', 'PATCH', { is_current: false }, '?is_current=eq.true');
+          // Activate this one
+          await sbWrite('schedule_sessions', 'PATCH', { is_current: true }, `?id=eq.${sess.id}`);
+          adminToast('Session activee!');
+          await adminLoadSessions();
+          const newIdx = adminSessions.findIndex(s => s.id === sess.id);
+          if (newIdx >= 0) adminCurrentIdx = newIdx;
+          renderAdminPanel();
+        } catch (err) {
+          adminToast('Erreur: ' + err.message);
+        }
+      }
+    };
+
+    window.__adminArchive = async () => {
+      const sess = adminSessions[adminCurrentIdx];
+      if (!sess) return;
+
+      const displayName = sessionDisplayName(sess);
+      const ok = await adminConfirm(`Archiver la session "${displayName}"?\n\nElle restera consultable mais en lecture seule.`);
+      if (!ok) return;
+
+      try {
+        // Workaround: no is_archived column — prefix name with "[ARCHIVE] "
+        // Also deactivate if currently active
+        const archivedName = ARCHIVE_PREFIX + displayName;
+        const updates = { name: archivedName };
+        if (sess.is_current) updates.is_current = false;
+        await sbWrite('schedule_sessions', 'PATCH', updates, `?id=eq.${sess.id}`);
+        adminToast('Session archivee');
+        await adminLoadSessions();
+        renderAdminPanel();
+      } catch (err) {
+        adminToast('Erreur: ' + err.message);
+      }
+    };
+  }
+
+  /* ============================================================
      BOOT / INIT
      ============================================================ */
 
@@ -1685,6 +2152,7 @@
     showLoading();
     bindFilters();
     bindViewToggle();
+    bindAdmin();
 
     try {
       const data = await loadSchedule();

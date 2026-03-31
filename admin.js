@@ -1355,10 +1355,109 @@ function initBindings() {
   document.getElementById('jcLink').href = JUNIOR_COMBATIVE_URL;
 }
 
+// ── SESSIONS MANAGEMENT ─────────────────────────────────────
+
+let allSessions = [];
+
+async function loadSessions() {
+  const tbody = document.getElementById('sessionsTableBody');
+  const errDiv = document.getElementById('sessionsError');
+  errDiv.classList.add('hidden');
+  tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-400 py-8">Chargement…</td></tr>';
+
+  try {
+    allSessions = await sbGet('schedule_sessions', 'order=start_date.desc');
+    renderSessions();
+  } catch (err) {
+    console.error('Load sessions failed:', err);
+    errDiv.textContent = `Erreur : ${err.message}`;
+    errDiv.classList.remove('hidden');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-red-400 py-8">Erreur de chargement</td></tr>';
+  }
+}
+
+function renderSessions() {
+  const tbody = document.getElementById('sessionsTableBody');
+
+  if (!allSessions.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-400 py-8">Aucune session trouvée</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = allSessions.map(s => {
+    const isCurrent = s.is_current;
+    const badge = isCurrent
+      ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700"><span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>Active</span>'
+      : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">Inactive</span>';
+    const btn = isCurrent
+      ? '<span class="text-xs text-gray-400 italic">Session courante</span>'
+      : `<button onclick="activateSession('${s.id}')" class="bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Activer</button>`;
+    const startFmt = s.start_date ? new Date(s.start_date + 'T00:00:00').toLocaleDateString('fr-CA') : '—';
+    const endFmt = s.end_date ? new Date(s.end_date + 'T00:00:00').toLocaleDateString('fr-CA') : '—';
+
+    return `<tr class="border-b border-gray-100 ${isCurrent ? 'bg-green-50/50' : 'hover:bg-gray-50'}">
+      <td class="px-4 py-3 font-medium text-gray-900">${escHtml(s.name || '(sans nom)')}</td>
+      <td class="px-4 py-3 text-gray-600">${startFmt}</td>
+      <td class="px-4 py-3 text-gray-600">${endFmt}</td>
+      <td class="px-4 py-3 text-center">${badge}</td>
+      <td class="px-4 py-3 text-right">${btn}</td>
+    </tr>`;
+  }).join('');
+}
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+async function activateSession(sessionId) {
+  if (!confirm('Activer cette session ? L\'ancienne session active sera désactivée.')) return;
+
+  const tbody = document.getElementById('sessionsTableBody');
+  const errDiv = document.getElementById('sessionsError');
+  errDiv.classList.add('hidden');
+
+  try {
+    // 1. Désactiver toutes les sessions
+    await sbRequest('schedule_sessions', 'PATCH', { is_current: false }, '?is_current=eq.true');
+
+    // 2. Activer la session choisie
+    await sbRequest('schedule_sessions', 'PATCH', { is_current: true }, `?id=eq.${encodeURIComponent(sessionId)}`);
+
+    showToast('Session activée — recharge la page pour travailler dessus', 'success');
+
+    // Refresh the list
+    await loadSessions();
+  } catch (err) {
+    console.error('Activate session failed:', err);
+    errDiv.textContent = `Erreur d'activation : ${err.message}`;
+    errDiv.classList.remove('hidden');
+    showToast('Erreur lors de l\'activation', 'error');
+  }
+}
+
+function initSessionsTab() {
+  document.getElementById('refreshSessionsBtn').addEventListener('click', loadSessions);
+
+  // Load sessions when the tab is first shown
+  const observer = new MutationObserver(() => {
+    const section = document.getElementById('tab-sessions');
+    if (section && !section.classList.contains('hidden') && !allSessions.length) {
+      loadSessions();
+    }
+  });
+  const section = document.getElementById('tab-sessions');
+  if (section) {
+    observer.observe(section, { attributes: true, attributeFilter: ['class'] });
+  }
+}
+
 // ── Init ─────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
   initBindings();
+  initSessionsTab();
   // Focus password field
   document.getElementById('passwordInput').focus();
 });

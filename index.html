@@ -144,6 +144,14 @@
             aria-label="Vue session">
             Session
           </button>
+          <button
+            id="btn-admin"
+            class="view-btn admin-btn"
+            data-view="admin"
+            aria-pressed="false"
+            aria-label="Administration des sessions">
+            &#9881; Sessions
+          </button>
         </nav>
 
         <!-- Countdown -->
@@ -302,6 +310,101 @@
           <!-- Populated by JS -->
         </div>
       </div>
+
+    </section>
+
+
+    <!-- ---- VUE ADMIN (SESSIONS) ---- -->
+    <section
+      id="view-admin"
+      class="hidden"
+      aria-label="Administration des sessions"
+      role="region">
+
+      <!-- Admin password gate -->
+      <div id="admin-gate" class="admin-gate">
+        <div class="admin-gate-card">
+          <h2 class="admin-gate-title">&#128274; Administration</h2>
+          <p class="admin-gate-sub">Entrez le mot de passe admin pour continuer.</p>
+          <form id="admin-login-form" class="admin-gate-form" autocomplete="off">
+            <input
+              type="password"
+              id="admin-password"
+              class="admin-input"
+              placeholder="Mot de passe"
+              aria-label="Mot de passe admin"
+              autocomplete="off" />
+            <button type="submit" class="admin-btn-primary">Connexion</button>
+          </form>
+          <p id="admin-login-error" class="admin-error hidden">Mot de passe incorrect</p>
+        </div>
+      </div>
+
+      <!-- Admin panel (hidden until auth) -->
+      <div id="admin-panel" class="hidden">
+
+        <!-- Session navigator -->
+        <div class="admin-session-nav">
+          <button id="admin-session-prev" class="admin-nav-arrow" aria-label="Session precedente">&#8249;</button>
+          <div class="admin-session-info" id="admin-session-info">
+            <!-- Populated by JS -->
+          </div>
+          <button id="admin-session-next" class="admin-nav-arrow" aria-label="Session suivante">&#8250;</button>
+        </div>
+
+        <!-- Session status badge -->
+        <div class="admin-status-row" id="admin-status-row">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Session details card -->
+        <div class="admin-detail-card" id="admin-detail-card">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Actions -->
+        <div class="admin-actions" id="admin-actions">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Create / Edit form (hidden by default) -->
+        <div id="admin-form-container" class="admin-form-container hidden">
+          <h3 id="admin-form-title" class="admin-form-title">Nouvelle session</h3>
+          <form id="admin-session-form" class="admin-form" autocomplete="off">
+            <div class="admin-field">
+              <label for="admin-f-name">Nom de la session</label>
+              <input type="text" id="admin-f-name" class="admin-input" placeholder="Ex: Hiver 2027" required />
+            </div>
+            <div class="admin-field-row">
+              <div class="admin-field">
+                <label for="admin-f-start">Date de debut</label>
+                <input type="date" id="admin-f-start" class="admin-input" required />
+              </div>
+              <div class="admin-field">
+                <label for="admin-f-end">Date de fin</label>
+                <input type="date" id="admin-f-end" class="admin-input" required />
+              </div>
+            </div>
+            <p id="admin-form-error" class="admin-error hidden"></p>
+            <div class="admin-form-actions">
+              <button type="button" id="admin-form-cancel" class="admin-btn-secondary">Annuler</button>
+              <button type="submit" id="admin-form-submit" class="admin-btn-primary">Creer</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Confirmation modal overlay -->
+        <div id="admin-confirm-overlay" class="admin-confirm-overlay hidden" role="dialog" aria-modal="true">
+          <div class="admin-confirm-card">
+            <p id="admin-confirm-msg" class="admin-confirm-msg"></p>
+            <div class="admin-confirm-actions">
+              <button id="admin-confirm-no" class="admin-btn-secondary">Annuler</button>
+              <button id="admin-confirm-yes" class="admin-btn-danger">Confirmer</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /admin-panel -->
 
     </section>
 

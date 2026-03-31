@@ -1,0 +1,88 @@
+{
+  "project": "Site Horaire Academie",
+  "version": "3.1.0",
+  "app_path": "D:/DIGITAL_GARDEN/02_CHATEAU/Direction_Academie_Martiale/Site_Horaire_Academie/",
+  "deploy_url": "https://horaire-academie-amf.netlify.app",
+  "repo": "cbas1974-projet/horaire-academie-amf",
+  "last_updated": "2026-03-17",
+  "features": [
+    {
+      "id": "vue-semaine",
+      "name": "Vue semaine publique",
+      "description": "Affichage semaine avec navigation, logos disciplines en watermark (opacity 0.22), filtres actifs",
+      "status": "pass"
+    },
+    {
+      "id": "vue-jour",
+      "name": "Vue jour publique",
+      "description": "Affichage des cours du jour avec logos disciplines en cercles CSS",
+      "status": "pass"
+    },
+    {
+      "id": "vue-mois",
+      "name": "Vue mois publique",
+      "description": "Calendrier mensuel avec logos disciplines en cercles CSS",
+      "status": "pass"
+    },
+    {
+      "id": "vue-session",
+      "name": "Vue session publique",
+      "description": "Affichage de toute la session (liste des cours sur la plage de dates)",
+      "status": "pass"
+    },
+    {
+      "id": "admin-panel",
+      "name": "Panel admin (admin.html)",
+      "description": "CRUD cours/conges/events/plages de dates. Protege par mot de passe amf2026admin.",
+      "status": "pass"
+    },
+    {
+      "id": "supabase-backend",
+      "name": "Backend Supabase (zero JSON statique)",
+      "description": "schedule.json supprime. Toutes les donnees viennent de dojo.schedule_courses, schedule_sessions, schedule_holidays, schedule_date_ranges.",
+      "status": "pass"
+    },
+    {
+      "id": "logos-disciplines",
+      "name": "Logos disciplines (4 disciplines)",
+      "description": "jiujitsu.png, muaythai.jpg, superkids.png, gracie.jpg dans logos/. Affichage adaptatif selon la vue.",
+      "status": "pass"
+    },
+    {
+      "id": "nav-semaine",
+      "name": "Navigation par semaine",
+      "description": "Fleches precedent/suivant pour naviguer semaine par semaine",
+      "status": "pass"
+    },
+    {
+      "id": "banniere-events",
+      "name": "Banniere evenements speciaux",
+      "description": "Passage de grades (7-10 juin), Competition (14 juin) affiches dans une banniere",
+      "status": "pass"
+    },
+    {
+      "id": "countdown-inscription",
+      "name": "Countdown ouverture inscriptions",
+      "description": "Compte a rebours avant ouverture des inscriptions pour la session en cours",
+      "status": "pass"
+    },
+    {
+      "id": "date-ranges-custom",
+      "name": "Plages de dates par discipline",
+      "description": "Jiujitsu & Gracie : 7 avril → 7 juin. Muay Thai : 7 avril → 27 mai. Gere via schedule_date_ranges.",
+      "status": "pass"
+    },
+    {
+      "id": "netlify-deploy",
+      "name": "Auto-deploy Netlify sur push main",
+      "description": "netlify.toml configure. Push main = deploy automatique. Headers securite inclus.",
+      "status": "pass"
+    },
+    {
+      "id": "dojo-planner-link",
+      "name": "Lien Dojo Planner → schedule_date_ranges",
+      "description": "Dojo Planner doit lire les plages de dates du meme schema Supabase — integration en attente",
+      "status": "pending"
+    }
+  ]
+}
