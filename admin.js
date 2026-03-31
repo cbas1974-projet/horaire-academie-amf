@@ -1678,8 +1678,12 @@ function initSessionsTab() {
 
 // ── Init ─────────────────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', async () => {
+// Run immediately when script loads (don't wait for DOMContentLoaded)
+// since admin.js is loaded dynamically after DOMContentLoaded has passed
+(async () => {
+  console.log('⏱️ admin.js loaded, initializing...');
   await loadData();
   initBindings();
   initSessionsTab();
-});
+  console.log('✅ Initialization complete');
+})();
