@@ -119,11 +119,13 @@ async function loadFromSupabase() {
     sbGet('schedule_events', 'select=*'),
     sbGet('schedule_announcements', 'select=*'),
   ]);
+  sessions.reverse(); // REVERSE: Oldest first (Hiver) then newest (Printemps)
+
   // Fetch date ranges separately — table may not exist yet (pre-migration)
   let ranges = [];
   try { ranges = await sbGet('schedule_date_ranges', 'select=*&order=sort_order'); } catch { }
 
-  // Use first session (newest), or if marked as current, use that one
+  // Use first session (oldest/Hiver), or if marked as current, use that one
   let session = sessions.find(s => s.is_current) || sessions[0];
   if (!session) throw new Error('No sessions found');
   currentSessionId = session.id;
@@ -1345,6 +1347,7 @@ async function loadSessions() {
 
   try {
     allSessions = await sbGet('schedule_sessions', 'order=start_date.desc');
+    allSessions.reverse(); // REVERSE: Oldest first (Hiver) then newest (Printemps)
     // Try to keep index on same session if possible
     if (sessionIndex >= allSessions.length) sessionIndex = Math.max(0, allSessions.length - 1);
     renderSessionCard();
