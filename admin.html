@@ -71,6 +71,48 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
+
+      <!-- TAB: SESSIONS -->
+      <section id="tab-sessions" class="tab-content hidden">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-gray-900">Gestion des sessions</h2>
+          <div class="flex items-center gap-2">
+            <button id="newSessionBtn" class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">+ Nouvelle session</button>
+            <button id="refreshSessionsBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition">Rafraîchir</button>
+          </div>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">La session <strong>active</strong> est celle affichée sur le site public et chargée dans cet admin. Une seule session peut être active à la fois.</p>
+
+        <!-- Carousel navigation -->
+        <div class="flex items-center justify-center gap-4 mb-4">
+          <button id="sessionPrev" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition disabled:opacity-30 disabled:cursor-not-allowed" title="Session précédente">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <span id="sessionCounter" class="text-sm font-medium text-gray-500">— / —</span>
+          <button id="sessionNext" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition disabled:opacity-30 disabled:cursor-not-allowed" title="Session suivante">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <!-- Session card (one at a time) -->
+        <div id="sessionCard" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div id="sessionCardContent" class="text-center text-gray-400 py-8">Chargement…</div>
+        </div>
+
+        <!-- Action buttons (shown when a session is displayed) -->
+        <div id="sessionActions" class="hidden mt-4 flex flex-wrap items-center gap-2 justify-center">
+          <button id="sessionActivateBtn" class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Forcer Actif</button>
+          <button id="sessionDeactivateBtn" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Forcer Inactif</button>
+          <button id="sessionEditBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Modifier</button>
+          <button id="sessionDuplicateBtn" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Dupliquer</button>
+          <button id="sessionArchiveBtn" class="bg-gray-500 hover:bg-gray-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Archiver</button>
+        </div>
+
+        <div id="sessionsError" class="hidden mt-4 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700"></div>
+      </section>
+
+    </main>
+  <
       <!-- TAB: COURS -->
       <section id="tab-cours" class="tab-content">
         <div class="flex items-center justify-between mb-4">
@@ -78,7 +120,6 @@
         </div>
         <div id="scheduleAccordion" class="space-y-3"></div>
       </section>
-
       <!-- TAB: CONGES -->
       <section id="tab-conges" class="tab-content hidden">
         <div class="flex items-center justify-between mb-4">
@@ -101,7 +142,6 @@
           </table>
         </div>
       </section>
-
       <!-- TAB: EVENEMENTS -->
       <section id="tab-evenements" class="tab-content hidden">
         <div class="flex items-center justify-between mb-4">
@@ -125,7 +165,6 @@
           </table>
         </div>
       </section>
-
       <!-- TAB: PARAMETRES -->
       <section id="tab-parametres" class="tab-content hidden">
         <h2 class="text-lg font-bold text-gray-900 mb-4">Paramètres généraux</h2>
@@ -216,7 +255,6 @@
           <button id="saveParamsBtn" class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">Enregistrer les paramètres</button>
         </div>
       </section>
-
       <!-- TAB: ACTIONS -->
       <section id="tab-actions" class="tab-content hidden">
         <h2 class="text-lg font-bold text-gray-900 mb-4">Actions</h2>
@@ -256,44 +294,6 @@
         </div>
       </section>
 
-      <!-- TAB: SESSIONS -->
-      <section id="tab-sessions" class="tab-content hidden">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-gray-900">Gestion des sessions</h2>
-          <div class="flex items-center gap-2">
-            <button id="newSessionBtn" class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">+ Nouvelle session</button>
-            <button id="refreshSessionsBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition">Rafraîchir</button>
-          </div>
-        </div>
-        <p class="text-sm text-gray-500 mb-4">La session <strong>active</strong> est celle affichée sur le site public et chargée dans cet admin. Une seule session peut être active à la fois.</p>
-
-        <!-- Carousel navigation -->
-        <div class="flex items-center justify-center gap-4 mb-4">
-          <button id="sessionPrev" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition disabled:opacity-30 disabled:cursor-not-allowed" title="Session précédente">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-          </button>
-          <span id="sessionCounter" class="text-sm font-medium text-gray-500">— / —</span>
-          <button id="sessionNext" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition disabled:opacity-30 disabled:cursor-not-allowed" title="Session suivante">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </button>
-        </div>
-
-        <!-- Session card (one at a time) -->
-        <div id="sessionCard" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div id="sessionCardContent" class="text-center text-gray-400 py-8">Chargement…</div>
-        </div>
-
-        <!-- Action buttons (shown when a session is displayed) -->
-        <div id="sessionActions" class="hidden mt-4 flex flex-wrap items-center gap-2 justify-center">
-          <button id="sessionActivateBtn" class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Forcer Actif</button>
-          <button id="sessionDeactivateBtn" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Forcer Inactif</button>
-          <button id="sessionEditBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Modifier</button>
-          <button id="sessionDuplicateBtn" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Dupliquer</button>
-          <button id="sessionArchiveBtn" class="bg-gray-500 hover:bg-gray-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Archiver</button>
-        </div>
-
-        <div id="sessionsError" class="hidden mt-4 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700"></div>
-      </section>
 
     </main>
   </div>
