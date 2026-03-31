@@ -114,7 +114,7 @@ async function loadData() {
 async function loadFromSupabase() {
   const [sessions, courses, holidays, events, announcements] = await Promise.all([
     sbGet('schedule_sessions', 'select=*&order=start_date.desc'),
-    sbGet('schedule_courses', 'is_active=eq.true&order=day_index,sort_order'),
+    sbGet('schedule_courses', 'select=*&order=day_index,sort_order'),
     sbGet('schedule_holidays', 'select=*'),
     sbGet('schedule_events', 'select=*'),
     sbGet('schedule_announcements', 'select=*'),
