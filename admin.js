@@ -353,13 +353,13 @@ function buildDayCard(dayObj) {
     table.innerHTML = `
       <table class="w-full text-sm" style="table-layout: fixed;">
         <colgroup>
-          <col style="width: 7%;">
-          <col style="width: 15%;">
-          <col style="width: 20%;" class="hidden md:table-column">
-          <col style="width: 5%;" class="hidden sm:table-column">
-          <col style="width: 8%;">
-          <col style="width: 5%;" class="hidden sm:table-column">
+          <col style="width: 5%;">
           <col style="width: 10%;">
+          <col style="width: 15%;" class="hidden md:table-column">
+          <col style="width: 5%;" class="hidden sm:table-column">
+          <col style="width: 5%;">
+          <col style="width: 3%;" class="hidden sm:table-column">
+          <col style="width: 5%;">
         </colgroup>
         <thead>
           <tr class="border-b border-gray-100">
