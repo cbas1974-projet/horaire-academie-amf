@@ -279,25 +279,38 @@
       <section id="tab-sessions" class="tab-content hidden">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-bold text-gray-900">Gestion des sessions</h2>
-          <button id="refreshSessionsBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition">Rafraîchir</button>
+          <div class="flex items-center gap-2">
+            <button id="newSessionBtn" class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">+ Nouvelle session</button>
+            <button id="refreshSessionsBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition">Rafraîchir</button>
+          </div>
         </div>
         <p class="text-sm text-gray-500 mb-4">La session <strong>active</strong> est celle affichée sur le site public et chargée dans cet admin. Une seule session peut être active à la fois.</p>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="bg-gray-50 border-b border-gray-200">
-                <th class="text-left px-4 py-3 font-semibold text-gray-600">Nom</th>
-                <th class="text-left px-4 py-3 font-semibold text-gray-600">Début</th>
-                <th class="text-left px-4 py-3 font-semibold text-gray-600">Fin</th>
-                <th class="text-center px-4 py-3 font-semibold text-gray-600">Statut</th>
-                <th class="text-right px-4 py-3 font-semibold text-gray-600">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="sessionsTableBody">
-              <tr><td colspan="5" class="text-center text-gray-400 py-8">Chargement…</td></tr>
-            </tbody>
-          </table>
+
+        <!-- Carousel navigation -->
+        <div class="flex items-center justify-center gap-4 mb-4">
+          <button id="sessionPrev" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition disabled:opacity-30 disabled:cursor-not-allowed" title="Session précédente">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <span id="sessionCounter" class="text-sm font-medium text-gray-500">— / —</span>
+          <button id="sessionNext" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition disabled:opacity-30 disabled:cursor-not-allowed" title="Session suivante">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
         </div>
+
+        <!-- Session card (one at a time) -->
+        <div id="sessionCard" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div id="sessionCardContent" class="text-center text-gray-400 py-8">Chargement…</div>
+        </div>
+
+        <!-- Action buttons (shown when a session is displayed) -->
+        <div id="sessionActions" class="hidden mt-4 flex flex-wrap items-center gap-2 justify-center">
+          <button id="sessionActivateBtn" class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Forcer Actif</button>
+          <button id="sessionDeactivateBtn" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Forcer Inactif</button>
+          <button id="sessionEditBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Modifier</button>
+          <button id="sessionDuplicateBtn" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Dupliquer</button>
+          <button id="sessionArchiveBtn" class="bg-gray-500 hover:bg-gray-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Archiver</button>
+        </div>
+
         <div id="sessionsError" class="hidden mt-4 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700"></div>
       </section>
 
@@ -506,6 +519,52 @@
       <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
         <button class="modal-close text-sm text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg">Annuler</button>
         <button id="saveDateRangeBtn" class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL SESSION -->
+  <div id="sessionModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h3 id="sessionModalTitle" class="font-bold text-gray-900">Nouvelle session</h3>
+        <button class="modal-close text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <input type="hidden" id="sessionEditId" />
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Nom de la session <span class="text-red-500">*</span></label>
+          <input id="sessionNameInput" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex: Hiver 2026" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Date de début <span class="text-red-500">*</span></label>
+            <input id="sessionStartInput" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Date de fin <span class="text-red-500">*</span></label>
+            <input id="sessionEndInput" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        </div>
+        <div id="sessionModalWarning" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700"></div>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
+        <button class="modal-close text-sm text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg">Annuler</button>
+        <button id="saveSessionBtn" class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMATION -->
+  <div id="confirmModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+      <div class="px-6 py-5">
+        <h3 id="confirmModalTitle" class="font-bold text-gray-900 mb-2">Confirmer</h3>
+        <p id="confirmModalMsg" class="text-sm text-gray-600"></p>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
+        <button id="confirmModalCancel" class="text-sm text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg">Annuler</button>
+        <button id="confirmModalOk" class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">Confirmer</button>
       </div>
     </div>
   </div>

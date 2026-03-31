@@ -1355,54 +1355,103 @@ function initBindings() {
   document.getElementById('jcLink').href = JUNIOR_COMBATIVE_URL;
 }
 
-// ── SESSIONS MANAGEMENT ─────────────────────────────────────
+// ── UUID helper ─────────────────────────────────────────────
+
+function generateUUID() {
+  // crypto.randomUUID if available, fallback for older browsers
+  if (crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+// ── SESSIONS MANAGEMENT (Carousel) ──────────────────────────
 
 let allSessions = [];
+let sessionIndex = 0; // currently viewed session in carousel
 
 async function loadSessions() {
-  const tbody = document.getElementById('sessionsTableBody');
+  const cardContent = document.getElementById('sessionCardContent');
   const errDiv = document.getElementById('sessionsError');
   errDiv.classList.add('hidden');
-  tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-400 py-8">Chargement…</td></tr>';
+  cardContent.innerHTML = '<div class="text-center text-gray-400 py-8">Chargement…</div>';
+  document.getElementById('sessionActions').classList.add('hidden');
 
   try {
     allSessions = await sbGet('schedule_sessions', 'order=start_date.desc');
-    renderSessions();
+    // Try to keep index on same session if possible
+    if (sessionIndex >= allSessions.length) sessionIndex = Math.max(0, allSessions.length - 1);
+    renderSessionCard();
   } catch (err) {
     console.error('Load sessions failed:', err);
     errDiv.textContent = `Erreur : ${err.message}`;
     errDiv.classList.remove('hidden');
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-red-400 py-8">Erreur de chargement</td></tr>';
+    cardContent.innerHTML = '<div class="text-center text-red-400 py-8">Erreur de chargement</div>';
   }
 }
 
-function renderSessions() {
-  const tbody = document.getElementById('sessionsTableBody');
+function getSessionStatus(s) {
+  if (s.is_current) return { label: 'Actif', css: 'bg-green-100 text-green-700', dot: 'bg-green-500' };
+  const now = new Date().toISOString().slice(0, 10);
+  if (s.start_date && s.start_date > now) return { label: 'En construction', css: 'bg-blue-100 text-blue-700', dot: 'bg-blue-500' };
+  if (s.name && s.name.startsWith('[ARCHIVE]')) return { label: 'Archivé', css: 'bg-gray-100 text-gray-500', dot: 'bg-gray-400' };
+  if (s.end_date && s.end_date < now) return { label: 'Archivé', css: 'bg-gray-100 text-gray-500', dot: 'bg-gray-400' };
+  return { label: 'Inactif', css: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500' };
+}
+
+function renderSessionCard() {
+  const cardContent = document.getElementById('sessionCardContent');
+  const counter = document.getElementById('sessionCounter');
+  const actions = document.getElementById('sessionActions');
+  const prevBtn = document.getElementById('sessionPrev');
+  const nextBtn = document.getElementById('sessionNext');
 
   if (!allSessions.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-400 py-8">Aucune session trouvée</td></tr>';
+    cardContent.innerHTML = '<div class="text-center text-gray-400 py-8">Aucune session. Cliquez "+ Nouvelle session" pour commencer.</div>';
+    counter.textContent = '0 / 0';
+    actions.classList.add('hidden');
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
     return;
   }
 
-  tbody.innerHTML = allSessions.map(s => {
-    const isCurrent = s.is_current;
-    const badge = isCurrent
-      ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700"><span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>Active</span>'
-      : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">Inactive</span>';
-    const btn = isCurrent
-      ? '<span class="text-xs text-gray-400 italic">Session courante</span>'
-      : `<button onclick="activateSession('${s.id}')" class="bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">Activer</button>`;
-    const startFmt = s.start_date ? new Date(s.start_date + 'T00:00:00').toLocaleDateString('fr-CA') : '—';
-    const endFmt = s.end_date ? new Date(s.end_date + 'T00:00:00').toLocaleDateString('fr-CA') : '—';
+  const s = allSessions[sessionIndex];
+  const status = getSessionStatus(s);
+  const startFmt = s.start_date ? new Date(s.start_date + 'T00:00:00').toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
+  const endFmt = s.end_date ? new Date(s.end_date + 'T00:00:00').toLocaleDateString('fr-CA', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
 
-    return `<tr class="border-b border-gray-100 ${isCurrent ? 'bg-green-50/50' : 'hover:bg-gray-50'}">
-      <td class="px-4 py-3 font-medium text-gray-900">${escHtml(s.name || '(sans nom)')}</td>
-      <td class="px-4 py-3 text-gray-600">${startFmt}</td>
-      <td class="px-4 py-3 text-gray-600">${endFmt}</td>
-      <td class="px-4 py-3 text-center">${badge}</td>
-      <td class="px-4 py-3 text-right">${btn}</td>
-    </tr>`;
-  }).join('');
+  const badge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${status.css}"><span class="w-1.5 h-1.5 rounded-full ${status.dot} inline-block"></span>${status.label}</span>`;
+
+  cardContent.innerHTML = `
+    <div class="flex flex-col items-center gap-3">
+      <div class="text-xl font-bold text-gray-900">${escHtml(s.name || '(sans nom)')}</div>
+      ${badge}
+      <div class="flex items-center gap-6 text-sm text-gray-600 mt-2">
+        <div class="text-center">
+          <div class="text-xs text-gray-400 uppercase tracking-wide">Début</div>
+          <div class="font-medium">${startFmt}</div>
+        </div>
+        <div class="text-gray-300">|</div>
+        <div class="text-center">
+          <div class="text-xs text-gray-400 uppercase tracking-wide">Fin</div>
+          <div class="font-medium">${endFmt}</div>
+        </div>
+      </div>
+      ${s.is_current ? '<div class="mt-2 text-xs text-green-600 font-medium">Cette session est actuellement chargée dans l\'admin</div>' : ''}
+    </div>
+  `;
+
+  counter.textContent = `${sessionIndex + 1} / ${allSessions.length}`;
+  prevBtn.disabled = sessionIndex <= 0;
+  nextBtn.disabled = sessionIndex >= allSessions.length - 1;
+
+  // Show/hide action buttons based on state
+  actions.classList.remove('hidden');
+  document.getElementById('sessionActivateBtn').classList.toggle('hidden', s.is_current);
+  document.getElementById('sessionDeactivateBtn').classList.toggle('hidden', !s.is_current);
+  const isArchived = (s.name && s.name.startsWith('[ARCHIVE]'));
+  document.getElementById('sessionArchiveBtn').classList.toggle('hidden', isArchived);
 }
 
 function escHtml(str) {
@@ -1411,23 +1460,155 @@ function escHtml(str) {
   return d.innerHTML;
 }
 
-async function activateSession(sessionId) {
-  if (!confirm('Activer cette session ? L\'ancienne session active sera désactivée.')) return;
+// ── Session navigation ──────────────────────────────────────
 
-  const tbody = document.getElementById('sessionsTableBody');
+function sessionPrev() {
+  if (sessionIndex > 0) { sessionIndex--; renderSessionCard(); }
+}
+
+function sessionNext() {
+  if (sessionIndex < allSessions.length - 1) { sessionIndex++; renderSessionCard(); }
+}
+
+// ── Confirm modal helper ────────────────────────────────────
+
+function showConfirm(title, msg) {
+  return new Promise(resolve => {
+    document.getElementById('confirmModalTitle').textContent = title;
+    document.getElementById('confirmModalMsg').textContent = msg;
+    const modal = document.getElementById('confirmModal');
+    modal.classList.remove('hidden');
+
+    const okBtn = document.getElementById('confirmModalOk');
+    const cancelBtn = document.getElementById('confirmModalCancel');
+    const cleanup = (result) => {
+      modal.classList.add('hidden');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      modal.querySelectorAll('.modal-close').forEach(b => b.removeEventListener('click', onCancel));
+      resolve(result);
+    };
+    const onOk = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', onCancel));
+  });
+}
+
+// ── Session CRUD ────────────────────────────────────────────
+
+function openSessionModal(mode, session) {
+  const modal = document.getElementById('sessionModal');
+  const title = document.getElementById('sessionModalTitle');
+  const nameInput = document.getElementById('sessionNameInput');
+  const startInput = document.getElementById('sessionStartInput');
+  const endInput = document.getElementById('sessionEndInput');
+  const editId = document.getElementById('sessionEditId');
+  const warning = document.getElementById('sessionModalWarning');
+  warning.classList.add('hidden');
+
+  if (mode === 'new') {
+    title.textContent = 'Nouvelle session';
+    nameInput.value = '';
+    startInput.value = '';
+    endInput.value = '';
+    editId.value = '';
+  } else if (mode === 'edit' && session) {
+    title.textContent = 'Modifier la session';
+    nameInput.value = session.name || '';
+    startInput.value = session.start_date || '';
+    endInput.value = session.end_date || '';
+    editId.value = session.id;
+  } else if (mode === 'duplicate' && session) {
+    title.textContent = 'Dupliquer la session';
+    const cleanName = (session.name || '').replace(/^\[ARCHIVE\]\s*/, '');
+    nameInput.value = cleanName + ' (copie)';
+    startInput.value = '';
+    endInput.value = '';
+    editId.value = '';
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function closeSessionModal() {
+  document.getElementById('sessionModal').classList.add('hidden');
+}
+
+function validateSessionDates(start, end) {
+  if (!start || !end) return 'Les dates de début et fin sont obligatoires.';
+  if (start >= end) return 'La date de début doit être avant la date de fin.';
+  return null;
+}
+
+function checkOverlap(start, end, excludeId) {
+  return allSessions.filter(s => {
+    if (s.id === excludeId) return false;
+    if (s.name && s.name.startsWith('[ARCHIVE]')) return false;
+    if (!s.start_date || !s.end_date) return false;
+    return start <= s.end_date && end >= s.start_date;
+  });
+}
+
+async function saveSession() {
+  const name = document.getElementById('sessionNameInput').value.trim();
+  const start = document.getElementById('sessionStartInput').value;
+  const end = document.getElementById('sessionEndInput').value;
+  const editId = document.getElementById('sessionEditId').value;
+  const warning = document.getElementById('sessionModalWarning');
+  warning.classList.add('hidden');
+
+  if (!name) { warning.textContent = 'Le nom est obligatoire.'; warning.classList.remove('hidden'); return; }
+
+  const dateErr = validateSessionDates(start, end);
+  if (dateErr) { warning.textContent = dateErr; warning.classList.remove('hidden'); return; }
+
+  // Check overlap
+  const overlapping = checkOverlap(start, end, editId || null);
+  if (overlapping.length > 0) {
+    const names = overlapping.map(s => s.name).join(', ');
+    const proceed = await showConfirm('Chevauchement détecté', `Cette session chevauche : ${names}. Continuer quand même ?`);
+    if (!proceed) return;
+  }
+
+  // Final confirmation
+  const action = editId ? 'modifier' : 'créer';
+  const confirmed = await showConfirm('Confirmer', `Voulez-vous ${action} la session "${name}" (${start} → ${end}) ?`);
+  if (!confirmed) return;
+
+  try {
+    if (editId) {
+      await sbRequest('schedule_sessions', 'PATCH', { name, start_date: start, end_date: end }, `?id=eq.${encodeURIComponent(editId)}`);
+      showToast('Session modifiée', 'success');
+    } else {
+      await sbRequest('schedule_sessions', 'POST', { id: generateUUID(), name, start_date: start, end_date: end, is_current: false });
+      showToast('Session créée', 'success');
+    }
+    closeSessionModal();
+    await loadSessions();
+  } catch (err) {
+    console.error('Save session failed:', err);
+    warning.textContent = `Erreur : ${err.message}`;
+    warning.classList.remove('hidden');
+    showToast('Erreur lors de la sauvegarde', 'error');
+  }
+}
+
+async function activateSession() {
+  const s = allSessions[sessionIndex];
+  if (!s) return;
+
+  const confirmed = await showConfirm('Forcer Actif', `Activer "${s.name}" ? L'ancienne session active sera désactivée.`);
+  if (!confirmed) return;
+
   const errDiv = document.getElementById('sessionsError');
   errDiv.classList.add('hidden');
 
   try {
-    // 1. Désactiver toutes les sessions
     await sbRequest('schedule_sessions', 'PATCH', { is_current: false }, '?is_current=eq.true');
-
-    // 2. Activer la session choisie
-    await sbRequest('schedule_sessions', 'PATCH', { is_current: true }, `?id=eq.${encodeURIComponent(sessionId)}`);
-
+    await sbRequest('schedule_sessions', 'PATCH', { is_current: true }, `?id=eq.${encodeURIComponent(s.id)}`);
     showToast('Session activée — recharge la page pour travailler dessus', 'success');
-
-    // Refresh the list
     await loadSessions();
   } catch (err) {
     console.error('Activate session failed:', err);
@@ -1437,8 +1618,85 @@ async function activateSession(sessionId) {
   }
 }
 
+async function deactivateSession() {
+  const s = allSessions[sessionIndex];
+  if (!s) return;
+
+  const confirmed = await showConfirm('Forcer Inactif', `Désactiver "${s.name}" ? Aucune session ne sera active.`);
+  if (!confirmed) return;
+
+  try {
+    await sbRequest('schedule_sessions', 'PATCH', { is_current: false }, `?id=eq.${encodeURIComponent(s.id)}`);
+    showToast('Session désactivée', 'success');
+    await loadSessions();
+  } catch (err) {
+    console.error('Deactivate session failed:', err);
+    showToast('Erreur lors de la désactivation', 'error');
+  }
+}
+
+async function duplicateSession() {
+  const s = allSessions[sessionIndex];
+  if (!s) return;
+  openSessionModal('duplicate', s);
+}
+
+async function editSession() {
+  const s = allSessions[sessionIndex];
+  if (!s) return;
+  openSessionModal('edit', s);
+}
+
+async function archiveSession() {
+  const s = allSessions[sessionIndex];
+  if (!s) return;
+
+  if (s.is_current) {
+    showToast('Impossible d\'archiver la session active. Désactivez-la d\'abord.', 'error');
+    return;
+  }
+
+  const confirmed = await showConfirm('Archiver', `Archiver "${s.name}" ? Le nom sera préfixé par [ARCHIVE].`);
+  if (!confirmed) return;
+
+  try {
+    const newName = s.name.startsWith('[ARCHIVE]') ? s.name : `[ARCHIVE] ${s.name}`;
+    await sbRequest('schedule_sessions', 'PATCH', { name: newName, is_current: false }, `?id=eq.${encodeURIComponent(s.id)}`);
+    showToast('Session archivée', 'success');
+    await loadSessions();
+  } catch (err) {
+    console.error('Archive session failed:', err);
+    showToast('Erreur lors de l\'archivage', 'error');
+  }
+}
+
+// ── Init Sessions Tab ───────────────────────────────────────
+
 function initSessionsTab() {
   document.getElementById('refreshSessionsBtn').addEventListener('click', loadSessions);
+  document.getElementById('newSessionBtn').addEventListener('click', () => openSessionModal('new'));
+  document.getElementById('sessionPrev').addEventListener('click', sessionPrev);
+  document.getElementById('sessionNext').addEventListener('click', sessionNext);
+  document.getElementById('sessionActivateBtn').addEventListener('click', activateSession);
+  document.getElementById('sessionDeactivateBtn').addEventListener('click', deactivateSession);
+  document.getElementById('sessionEditBtn').addEventListener('click', editSession);
+  document.getElementById('sessionDuplicateBtn').addEventListener('click', duplicateSession);
+  document.getElementById('sessionArchiveBtn').addEventListener('click', archiveSession);
+  document.getElementById('saveSessionBtn').addEventListener('click', saveSession);
+
+  // Close session modal
+  document.querySelectorAll('#sessionModal .modal-close').forEach(btn => {
+    btn.addEventListener('click', closeSessionModal);
+  });
+
+  // Keyboard nav
+  document.addEventListener('keydown', e => {
+    const section = document.getElementById('tab-sessions');
+    if (!section || section.classList.contains('hidden')) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'ArrowLeft') sessionPrev();
+    if (e.key === 'ArrowRight') sessionNext();
+  });
 
   // Load sessions when the tab is first shown
   const observer = new MutationObserver(() => {
