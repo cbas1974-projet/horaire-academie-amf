@@ -87,20 +87,27 @@ let toastTimer = null;
 
 async function loadData() {
   try {
+    console.log('📡 Loading from Supabase...');
     data = await loadFromSupabase();
+    console.log('✅ Supabase data loaded:', data);
     showToast('Horaire chargé depuis Supabase', 'success');
   } catch (err) {
-    console.warn('Supabase load failed:', err.message);
+    console.error('❌ Supabase load failed:', err.message);
     try {
+      console.log('📄 Trying schedule.json...');
       const res = await fetch('schedule.json', { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       data = normalizeData(await res.json());
+      console.log('✅ schedule.json loaded');
       showToast('Horaire chargé depuis schedule.json (Supabase indisponible)', 'warning');
-    } catch {
+    } catch (err2) {
+      console.error('❌ schedule.json also failed:', err2.message);
       data = getEmptyData();
+      console.log('⚠️ Using empty data');
       showToast('Démarrage en mode vide — importez un JSON ou créez l\'horaire', 'warning');
     }
   }
+  console.log('🎨 Rendering all tabs...');
   renderAll();
 }
 
