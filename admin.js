@@ -1463,11 +1463,11 @@ function escHtml(str) {
 // ── Session navigation ──────────────────────────────────────
 
 function sessionPrev() {
-  if (sessionIndex > 0) { sessionIndex--; renderSessionCard(); }
+  if (sessionIndex < allSessions.length - 1) { sessionIndex++; renderSessionCard(); }
 }
 
 function sessionNext() {
-  if (sessionIndex < allSessions.length - 1) { sessionIndex++; renderSessionCard(); }
+  if (sessionIndex > 0) { sessionIndex--; renderSessionCard(); }
 }
 
 // ── Confirm modal helper ────────────────────────────────────
