@@ -1380,6 +1380,7 @@ async function loadSessions() {
 
   try {
     allSessions = await sbGet('schedule_sessions', 'order=start_date');
+    allSessions.reverse(); // Invert order: oldest first
     // Try to keep index on same session if possible
     if (sessionIndex >= allSessions.length) sessionIndex = Math.max(0, allSessions.length - 1);
     renderSessionCard();
