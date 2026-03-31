@@ -1670,7 +1670,8 @@ function initSessionsTab() {
 
 // ── Init ─────────────────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadData();
   initBindings();
   initSessionsTab();
 });
