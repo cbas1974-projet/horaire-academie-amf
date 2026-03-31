@@ -1379,8 +1379,7 @@ async function loadSessions() {
   document.getElementById('sessionActions').classList.add('hidden');
 
   try {
-    allSessions = await sbGet('schedule_sessions', 'order=start_date');
-    allSessions.reverse(); // Invert order: oldest first
+    allSessions = await sbGet('schedule_sessions', 'order=start_date.desc');
     // Try to keep index on same session if possible
     if (sessionIndex >= allSessions.length) sessionIndex = Math.max(0, allSessions.length - 1);
     renderSessionCard();
@@ -1464,11 +1463,11 @@ function escHtml(str) {
 // ── Session navigation ──────────────────────────────────────
 
 function sessionPrev() {
-  if (sessionIndex > 0) { sessionIndex--; renderSessionCard(); }
+  if (sessionIndex < allSessions.length - 1) { sessionIndex++; renderSessionCard(); }
 }
 
 function sessionNext() {
-  if (sessionIndex < allSessions.length - 1) { sessionIndex++; renderSessionCard(); }
+  if (sessionIndex > 0) { sessionIndex--; renderSessionCard(); }
 }
 
 // ── Confirm modal helper ────────────────────────────────────
