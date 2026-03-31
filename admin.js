@@ -351,16 +351,16 @@ function buildDayCard(dayObj) {
     const table = document.createElement('div');
     table.className = 'overflow-x-auto';
     table.innerHTML = `
-      <table class="w-full text-sm">
+      <table class="w-full text-sm" style="table-layout: fixed;">
         <thead>
           <tr class="border-b border-gray-100">
-            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs">Heure</th>
+            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs w-20">Heure</th>
             <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs">Nom</th>
             <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs hidden md:table-cell">Description</th>
-            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs hidden sm:table-cell">Âge</th>
-            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs">Discipline</th>
-            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs hidden sm:table-cell">Durée</th>
-            <th class="text-right px-4 py-2 font-semibold text-gray-500 text-xs">Actions</th>
+            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs hidden sm:table-cell w-16">Âge</th>
+            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs w-24">Discipline</th>
+            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs hidden sm:table-cell w-20">Durée</th>
+            <th class="text-right px-4 py-2 font-semibold text-gray-500 text-xs w-24">Actions</th>
           </tr>
         </thead>
         <tbody>
