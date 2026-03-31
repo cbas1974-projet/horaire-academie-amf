@@ -1740,7 +1740,7 @@
    */
   async function adminLoadSessions() {
     adminSessions = await sbQuery('schedule_sessions', 'select=*&order=start_date.desc');
-    adminSessions.reverse(); // Invert order: oldest first (Hiver, then Printemps)
+    adminSessions.reverse(); // REVERSE: Oldest first (Hiver) then newest (Printemps)
     if (!adminSessions.length) {
       adminSessions = [];
     }
