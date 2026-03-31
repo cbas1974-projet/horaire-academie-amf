@@ -23,33 +23,9 @@
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen font-sans">
 
-  <!-- LOGIN OVERLAY -->
-  <div id="loginOverlay" class="fixed inset-0 bg-gray-900 flex items-center justify-center z-[100]">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm">
-      <div class="text-center mb-6">
-        <div class="text-3xl font-black text-gray-900 tracking-tight mb-1">AMF</div>
-        <div class="text-sm text-gray-500">Panneau d'administration</div>
-      </div>
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
-        <input
-          id="passwordInput"
-          type="password"
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Mot de passe admin"
-          autocomplete="current-password"
-        />
-        <div id="loginError" class="text-red-500 text-xs mt-1 hidden">Mot de passe incorrect.</div>
-      </div>
-      <button
-        id="loginBtn"
-        class="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 rounded-lg text-sm transition"
-      >Connexion</button>
-    </div>
-  </div>
 
-  <!-- MAIN APP (hidden until login) -->
-  <div id="app" class="hidden">
+  <!-- MAIN APP -->
+  <div id="app">
 
     <!-- TOP NAV -->
     <header class="bg-white border-b border-gray-200 sticky top-0 z-40">

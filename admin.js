@@ -83,43 +83,6 @@ let dateRanges = []; // schedule_date_ranges from Supabase
 let hasUnsavedChanges = false;
 let toastTimer = null;
 
-// ── SHA-256 via Web Crypto API ───────────────────────────────
-
-async function sha256hex(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Hash of "amf2026admin" — pre-computed for performance but verified at runtime
-let cachedPasswordHash = null;
-
-async function getExpectedHash() {
-  if (!cachedPasswordHash) {
-    cachedPasswordHash = await sha256hex('amf2026admin');
-  }
-  return cachedPasswordHash;
-}
-
-// ── Login ────────────────────────────────────────────────────
-
-async function handleLogin() {
-  const input = document.getElementById('passwordInput').value;
-  const errEl = document.getElementById('loginError');
-  if (!input) { errEl.classList.remove('hidden'); errEl.textContent = 'Entrez un mot de passe.'; return; }
-  const inputHash = await sha256hex(input);
-  const expected  = await getExpectedHash();
-  if (inputHash === expected) {
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('app').classList.remove('hidden');
-    await loadData();
-  } else {
-    errEl.classList.remove('hidden');
-    errEl.textContent = 'Mot de passe incorrect.';
-    document.getElementById('passwordInput').value = '';
-    document.getElementById('passwordInput').focus();
-  }
-}
-
 // ── Data Loading ─────────────────────────────────────────────
 
 async function loadData() {
@@ -1287,12 +1250,6 @@ function closeAllModals() {
 // ── Event Bindings ───────────────────────────────────────────
 
 function initBindings() {
-  // Login
-  document.getElementById('loginBtn').addEventListener('click', handleLogin);
-  document.getElementById('passwordInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') handleLogin();
-  });
-
   // Tabs
   initTabs();
 
@@ -1716,6 +1673,4 @@ function initSessionsTab() {
 document.addEventListener('DOMContentLoaded', () => {
   initBindings();
   initSessionsTab();
-  // Focus password field
-  document.getElementById('passwordInput').focus();
 });
