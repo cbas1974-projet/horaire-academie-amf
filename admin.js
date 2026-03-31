@@ -352,15 +352,24 @@ function buildDayCard(dayObj) {
     table.className = 'overflow-x-auto';
     table.innerHTML = `
       <table class="w-full text-sm" style="table-layout: fixed;">
+        <colgroup>
+          <col style="width: 10%;">
+          <col style="width: 25%;">
+          <col style="width: 25%;" class="hidden md:table-column">
+          <col style="width: 8%;" class="hidden sm:table-column">
+          <col style="width: 12%;">
+          <col style="width: 8%;" class="hidden sm:table-column">
+          <col style="width: 12%;">
+        </colgroup>
         <thead>
           <tr class="border-b border-gray-100">
-            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs w-20">Heure</th>
+            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs">Heure</th>
             <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs">Nom</th>
             <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs hidden md:table-cell">Description</th>
-            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs hidden sm:table-cell w-16">Âge</th>
-            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs w-24">Discipline</th>
-            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs hidden sm:table-cell w-20">Durée</th>
-            <th class="text-right px-4 py-2 font-semibold text-gray-500 text-xs w-24">Actions</th>
+            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs hidden sm:table-cell">Âge</th>
+            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs">Discipline</th>
+            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs hidden sm:table-cell">Durée</th>
+            <th class="text-right px-4 py-2 font-semibold text-gray-500 text-xs">Actions</th>
           </tr>
         </thead>
         <tbody>
