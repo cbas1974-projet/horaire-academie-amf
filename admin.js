@@ -1379,7 +1379,7 @@ async function loadSessions() {
   document.getElementById('sessionActions').classList.add('hidden');
 
   try {
-    allSessions = await sbGet('schedule_sessions', 'order=start_date.asc');
+    allSessions = await sbGet('schedule_sessions', 'order=start_date');
     // Try to keep index on same session if possible
     if (sessionIndex >= allSessions.length) sessionIndex = Math.max(0, allSessions.length - 1);
     renderSessionCard();
