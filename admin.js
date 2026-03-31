@@ -1422,12 +1422,6 @@ function renderSessionCard() {
   document.getElementById('sessionArchiveBtn').classList.toggle('hidden', isArchived);
 }
 
-function escHtml(str) {
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
-}
-
 // ── Session navigation ──────────────────────────────────────
 
 function sessionPrev() {
