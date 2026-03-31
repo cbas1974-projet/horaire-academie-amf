@@ -106,7 +106,7 @@ async function loadData() {
 
 async function loadFromSupabase() {
   const [sessions, courses, holidays, events, announcements] = await Promise.all([
-    sbGet('schedule_sessions', 'is_current=eq.true&limit=1'),
+    sbGet('schedule_sessions', 'select=*&order=start_date.desc'),
     sbGet('schedule_courses', 'is_active=eq.true&order=day_index,sort_order'),
     sbGet('schedule_holidays', 'select=*'),
     sbGet('schedule_events', 'select=*'),
@@ -116,8 +116,9 @@ async function loadFromSupabase() {
   let ranges = [];
   try { ranges = await sbGet('schedule_date_ranges', 'select=*&order=sort_order'); } catch { }
 
-  const session = sessions[0];
-  if (!session) throw new Error('No current session');
+  // Use first session (newest), or if marked as current, use that one
+  let session = sessions.find(s => s.is_current) || sessions[0];
+  if (!session) throw new Error('No sessions found');
   currentSessionId = session.id;
 
   const sid = session.id;
