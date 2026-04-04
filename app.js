@@ -258,7 +258,7 @@
       session: session.name,
       sessionStart: session.start_date,
       sessionEnd: session.end_date,
-      updated: new Date().toISOString().slice(0, 10),
+      updated: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
       contact: {
         email: 'info@academie-amf.com',
         phone: '',
@@ -1686,7 +1686,12 @@
      ADMIN — SESSIONS MANAGEMENT
      ============================================================ */
 
-  const ADMIN_PASSWORD = 'amf2026admin';
+  const ADMIN_PASSWORD_HASH = '29cedf60e07d1b27b468a12361bf481bc309d5382e96a4edcc7e91c768510123';
+  async function hashPassword(pw) {
+    const data = new TextEncoder().encode(pw);
+    const buf = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
   const ARCHIVE_PREFIX = '[ARCHIVE] '; // Workaround: no is_archived column yet — detect via name prefix
   let adminAuthed = false;
   let adminSessions = [];   // all sessions from Supabase
@@ -1980,10 +1985,11 @@
    */
   function bindAdmin() {
     // Login form
-    document.getElementById('admin-login-form').addEventListener('submit', (e) => {
+    document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const pw = document.getElementById('admin-password').value;
-      if (pw === ADMIN_PASSWORD) {
+      const pwHash = await hashPassword(pw);
+      if (pwHash === ADMIN_PASSWORD_HASH) {
         adminAuthed = true;
         document.getElementById('admin-gate').classList.add('hidden');
         document.getElementById('admin-panel').classList.remove('hidden');

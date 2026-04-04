@@ -33,7 +33,7 @@
     {
       "id": "admin-panel",
       "name": "Panel admin (admin.html)",
-      "description": "CRUD cours/conges/events/plages de dates. Protege par mot de passe amf2026admin.",
+      "description": "CRUD cours/conges/events/plages de dates. Protege par mot de passe hashe SHA-256.",
       "status": "pass"
     },
     {

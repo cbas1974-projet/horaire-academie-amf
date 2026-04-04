@@ -48,6 +48,12 @@
           <button id="downloadBtnTop" class="bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
             Télécharger JSON
           </button>
+          <a href="https://dojomanger.netlify.app" target="_blank" rel="noopener noreferrer"
+             class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition"
+             title="Ouvrir Dojo Manager">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            Dojo Manager
+          </a>
           <a href="https://horaire-academie-amf.netlify.app/" target="_blank" rel="noopener noreferrer"
              class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition"
              title="Ouvrir la version publique">
@@ -111,8 +117,6 @@
         <div id="sessionsError" class="hidden mt-4 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700"></div>
       </section>
 
-    </main>
-  <
       <!-- TAB: COURS -->
       <section id="tab-cours" class="tab-content">
         <div class="flex items-center justify-between mb-4">
@@ -133,11 +137,12 @@
                 <th class="text-left px-4 py-3 font-semibold text-gray-600">Date début</th>
                 <th class="text-left px-4 py-3 font-semibold text-gray-600">Date fin</th>
                 <th class="text-left px-4 py-3 font-semibold text-gray-600">Nom / Raison</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-600">Session</th>
                 <th class="text-right px-4 py-3 font-semibold text-gray-600">Actions</th>
               </tr>
             </thead>
             <tbody id="holidaysTableBody">
-              <tr><td colspan="4" class="text-center text-gray-400 py-8">Aucun congé</td></tr>
+              <tr><td colspan="5" class="text-center text-gray-400 py-8">Aucun congé</td></tr>
             </tbody>
           </table>
         </div>
@@ -155,12 +160,13 @@
                 <th class="text-left px-4 py-3 font-semibold text-gray-600">Date</th>
                 <th class="text-left px-4 py-3 font-semibold text-gray-600">Nom</th>
                 <th class="text-left px-4 py-3 font-semibold text-gray-600">Type</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-600">Session</th>
                 <th class="text-left px-4 py-3 font-semibold text-gray-600">Important</th>
                 <th class="text-right px-4 py-3 font-semibold text-gray-600">Actions</th>
               </tr>
             </thead>
             <tbody id="eventsTableBody">
-              <tr><td colspan="5" class="text-center text-gray-400 py-8">Aucun événement</td></tr>
+              <tr><td colspan="6" class="text-center text-gray-400 py-8">Aucun événement</td></tr>
             </tbody>
           </table>
         </div>
@@ -380,6 +386,10 @@
           <label class="block text-xs font-medium text-gray-600 mb-1">Nom / Raison <span class="text-red-500">*</span></label>
           <input id="holidayName" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex: Semaine de relâche" />
         </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Session</label>
+          <select id="holidaySessionId" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+        </div>
       </div>
       <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
         <button class="modal-close text-sm text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg">Annuler</button>
@@ -428,6 +438,10 @@
           <input id="eventImportant" type="checkbox" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
           <span class="text-sm text-gray-700">Important (affiche un badge sur le site)</span>
         </label>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Session</label>
+          <select id="eventSessionId" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+        </div>
       </div>
       <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
         <button class="modal-close text-sm text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg">Annuler</button>
@@ -532,6 +546,130 @@
       <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
         <button class="modal-close text-sm text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg">Annuler</button>
         <button id="saveSessionBtn" class="bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL COPIE UN COURS -->
+  <div id="copyCourseModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h3 class="font-bold text-gray-900">Dupliquer un cours</h3>
+        <button class="modal-close text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+        <input type="hidden" id="copyCourseSourceId" />
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Cours source</label>
+          <input id="copyCourseSourceName" type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500" readonly />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Session destination <span class="text-red-500">*</span></label>
+          <select id="copyCourseDestSession" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">— Choisir une session —</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Plage de dates destination <span class="text-red-500">*</span></label>
+          <select id="copyCourseDestDateRange" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">— Choisir d'abord une session —</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Jour</label>
+            <select id="copyCourseDestDay" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="0">Dimanche</option>
+              <option value="1">Lundi</option>
+              <option value="2">Mardi</option>
+              <option value="3">Mercredi</option>
+              <option value="4">Jeudi</option>
+              <option value="5">Vendredi</option>
+              <option value="6">Samedi</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Heure début</label>
+            <input id="copyCourseDestStart" type="time" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Heure fin</label>
+          <input id="copyCourseDestEnd" type="time" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div id="copyCourseWarning" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700"></div>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
+        <button class="modal-close text-sm text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg">Annuler</button>
+        <button id="saveCopyCourseBtn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">Dupliquer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL COPIE JOUR -->
+  <div id="copyDayModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h3 class="font-bold text-gray-900">Copier un jour</h3>
+        <button class="modal-close text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <input type="hidden" id="copyDaySourceDayIndex" />
+        <input type="hidden" id="copyDaySourceSessionId" />
+        <p class="text-sm text-gray-700">Copier tous les cours de <strong id="copyDaySourceLabel">—</strong> vers :</p>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Session destination <span class="text-red-500">*</span></label>
+          <select id="copyDayDestSession" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">— Choisir une session —</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Plage de dates destination <span class="text-red-500">*</span></label>
+          <select id="copyDayDestDateRange" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">— Choisir d'abord une session —</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Jour destination</label>
+          <select id="copyDayDestDay" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="0">Dimanche</option>
+            <option value="1">Lundi</option>
+            <option value="2">Mardi</option>
+            <option value="3">Mercredi</option>
+            <option value="4">Jeudi</option>
+            <option value="5">Vendredi</option>
+            <option value="6">Samedi</option>
+          </select>
+        </div>
+        <div id="copyDayWarning" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700"></div>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
+        <button class="modal-close text-sm text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg">Annuler</button>
+        <button id="saveCopyDayBtn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">Copier ce jour</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL COPIE SESSION -->
+  <div id="copySessionModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <h3 class="font-bold text-gray-900">Copier la session complète</h3>
+        <button class="modal-close text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <p class="text-sm text-gray-700">Copier tous les cours de <strong id="copySessionSourceLabel">—</strong> vers :</p>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Session destination <span class="text-red-500">*</span></label>
+          <select id="copySessionDestSession" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">— Choisir une session —</option>
+          </select>
+        </div>
+        <div id="copySessionWarning" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700"></div>
+      </div>
+      <div class="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
+        <button class="modal-close text-sm text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg">Annuler</button>
+        <button id="saveCopySessionBtn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">Copier la session</button>
       </div>
     </div>
   </div>

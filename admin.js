@@ -5,8 +5,7 @@
 
 // ── Constants ────────────────────────────────────────────────
 
-// Password is "amf2026admin" — hash computed at runtime via Web Crypto API
-// Change the literal in getExpectedHash() to update the password.
+// Admin password is hashed (SHA-256) — see app.js ADMIN_PASSWORD_HASH
 
 // URL Junior Combative — update when deployed
 const JUNIOR_COMBATIVE_URL = 'http://localhost:5173';
@@ -80,6 +79,10 @@ const DEFAULT_SCHEDULE_DAYS = [
 
 let data = null;
 let dateRanges = []; // schedule_date_ranges from Supabase
+let allSessionsData = []; // ALL sessions (for badge lookup in Cours tab)
+let allDateRanges = []; // ALL date_ranges across all sessions (for session badge lookup)
+let showCurrentSessionOnly = true; // Cours tab filter toggle (legacy, driven by selectedCoursSessionId)
+let selectedCoursSessionId = '__current__'; // '__all__' or a session UUID or '__current__'
 let hasUnsavedChanges = false;
 let toastTimer = null;
 
@@ -125,17 +128,30 @@ async function loadFromSupabase() {
   let ranges = [];
   try { ranges = await sbGet('schedule_date_ranges', 'select=*&order=sort_order'); } catch { }
 
+  // Store ALL sessions globally for badge lookup in Cours tab
+  allSessionsData = sessions;
+  // Store ALL date ranges globally for session badge lookup
+  allDateRanges = (ranges || []).map(r => ({
+    id: r.id,
+    sessionId: r.session_id,
+    name: r.name,
+    startDate: r.start_date,
+    endDate: r.end_date,
+    sortOrder: r.sort_order || 0,
+  }));
+
   // Use first session (oldest/Hiver), or if marked as current, use that one
   let session = sessions.find(s => s.is_current) || sessions[0];
   if (!session) throw new Error('No sessions found');
   currentSessionId = session.id;
+  selectedCoursSessionId = session.id; // default filter: current session
 
   const sid = session.id;
   const sessHolidays = holidays.filter(h => h.session_id === sid);
   const sessEvents = events.filter(e => e.session_id === sid);
   const sessAnn = announcements.filter(a => a.session_id === sid);
 
-  // Store date ranges globally
+  // Store date ranges globally (current session only)
   dateRanges = (ranges || []).filter(r => r.session_id === sid).map(r => ({
     id: r.id,
     name: r.name,
@@ -189,6 +205,7 @@ async function loadFromSupabase() {
       date: h.date,
       endDate: h.end_date || undefined,
       name: h.label || '',
+      sessionId: h.session_id || null,
     })),
     events: sessEvents.map(e => ({
       id: e.id,
@@ -198,6 +215,7 @@ async function loadFromSupabase() {
       description: e.description || '',
       type: e.event_type || 'autre',
       important: e.importance === 'high',
+      sessionId: e.session_id || null,
     })),
     schedule,
   };
@@ -245,7 +263,16 @@ function getEmptyData() {
 }
 
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return localDateStr(new Date());
+}
+
+// ALWAYS use this for local date strings — NEVER toISOString() for local dates
+function localDateStr(d) {
+  const date = d instanceof Date ? d : new Date(d);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 // ── Unsaved Changes ──────────────────────────────────────────
@@ -311,10 +338,93 @@ function renderAll() {
 
 // ── SCHEDULE (Tab 1) ─────────────────────────────────────────
 
+/**
+ * Resolve the session for a course:
+ *  - If course has a dateRangeId → look it up in allDateRanges → get sessionId
+ *  - Otherwise → belongs to currentSessionId
+ */
+function getCourseSession(cls) {
+  if (cls.dateRangeId) {
+    const dr = allDateRanges.find(r => r.id === cls.dateRangeId);
+    if (dr) return allSessionsData.find(s => s.id === dr.sessionId) || null;
+  }
+  return allSessionsData.find(s => s.id === currentSessionId) || null;
+}
+
+// Returns an HTML badge for a session ID (used in Congés & Événements tables)
+function sessionBadgeHtml(sessionId) {
+  if (!sessionId) {
+    return '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-400 border border-gray-200">Global</span>';
+  }
+  const sess = allSessionsData.find(s => s.id === sessionId);
+  if (!sess) {
+    return '<span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-400 border border-gray-200">—</span>';
+  }
+  const css = sess.is_current
+    ? 'bg-green-100 text-green-700 border border-green-200'
+    : 'bg-gray-100 text-gray-400 border border-gray-200';
+  return `<span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium ${css}">${escHtml(sess.name)}</span>`;
+}
+
 function renderSchedule() {
   const container = document.getElementById('scheduleAccordion');
   container.innerHTML = '';
-  (data.schedule || []).forEach(dayObj => {
+
+  // Inject filter bar above the accordion
+  const filterBar = document.createElement('div');
+  filterBar.id = 'coursFilterBar';
+  filterBar.className = 'flex items-center gap-3 mb-4 flex-wrap';
+
+  // Build session options for the dropdown
+  const sessionOptions = allSessionsData.map(s => {
+    const isCurrent = s.id === currentSessionId;
+    const label = s.name + (isCurrent ? ' (active)' : '');
+    const selected = selectedCoursSessionId === s.id ? 'selected' : '';
+    return `<option value="${escHtml(s.id)}" ${selected}>${escHtml(label)}</option>`;
+  }).join('');
+
+  const allSelected = selectedCoursSessionId === '__all__' ? 'selected' : '';
+
+  filterBar.innerHTML = `
+    <label class="text-sm font-medium text-gray-600" for="sessionSelectFilter">Session :</label>
+    <select id="sessionSelectFilter"
+      class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800">
+      <option value="__all__" ${allSelected}>Toutes les sessions</option>
+      ${sessionOptions}
+    </select>
+    <button id="copySessionBtn" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition ml-auto" title="Copier tous les cours de la session filtrée vers une autre session">Copier la session complète</button>
+  `;
+  container.appendChild(filterBar);
+
+  filterBar.querySelector('#copySessionBtn').addEventListener('click', () => {
+    openCopySessionModal();
+  });
+
+  filterBar.querySelector('#sessionSelectFilter').addEventListener('change', (e) => {
+    selectedCoursSessionId = e.target.value;
+    showCurrentSessionOnly = selectedCoursSessionId !== '__all__';
+    renderSchedule();
+  });
+
+  // Resolve active filter session ID
+  const activeFilterSessionId = selectedCoursSessionId === '__all__'
+    ? null
+    : (selectedCoursSessionId === '__current__' ? currentSessionId : selectedCoursSessionId);
+
+  // Build filtered schedule
+  const scheduleWithFilter = (data.schedule || []).map(dayObj => {
+    if (activeFilterSessionId === null) return dayObj;
+    // Filter: keep only courses belonging to the selected session
+    const filtered = (dayObj.classes || []).filter(cls => {
+      const sess = getCourseSession(cls);
+      return sess && sess.id === activeFilterSessionId;
+    });
+    return { ...dayObj, classes: filtered };
+  });
+
+  // Only show days that have courses (or all days if not filtering)
+  scheduleWithFilter.forEach(dayObj => {
+    if (activeFilterSessionId !== null && dayObj.classes.length === 0) return; // skip empty days when filtering
     container.appendChild(buildDayCard(dayObj));
   });
 }
@@ -336,6 +446,7 @@ function buildDayCard(dayObj) {
       <span class="text-xs text-gray-400 font-normal">${classes.length} cours</span>
     </div>
     <div class="flex items-center gap-2">
+      <button class="copy-day-btn bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold px-3 py-1 rounded-lg transition" data-day="${dayObj.dayIndex}" title="Copier tous les cours de ce jour vers une autre session">Copier ce jour</button>
       <button class="add-course-btn bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold px-3 py-1 rounded-lg transition" data-day="${dayObj.dayIndex}">+ Cours</button>
       <svg class="accordion-arrow w-4 h-4 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
     </div>
@@ -353,13 +464,14 @@ function buildDayCard(dayObj) {
     table.innerHTML = `
       <table class="w-full text-sm" style="table-layout: fixed;">
         <colgroup>
-          <col style="width: 5%;">
-          <col style="width: 10%;">
-          <col style="width: 15%;" class="hidden md:table-column">
-          <col style="width: 5%;" class="hidden sm:table-column">
-          <col style="width: 5%;">
-          <col style="width: 3%;" class="hidden sm:table-column">
-          <col style="width: 5%;">
+          <col style="width: 9%;">
+          <col style="width: 13%;">
+          <col style="width: 13%;" class="hidden md:table-column">
+          <col style="width: 6%;" class="hidden sm:table-column">
+          <col style="width: 7%;">
+          <col style="width: 4%;" class="hidden sm:table-column">
+          <col style="width: 10%;" class="hidden sm:table-column">
+          <col style="width: 8%;">
         </colgroup>
         <thead>
           <tr class="border-b border-gray-100">
@@ -369,6 +481,7 @@ function buildDayCard(dayObj) {
             <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs hidden sm:table-cell">Âge</th>
             <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs">Discipline</th>
             <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs hidden sm:table-cell">Durée</th>
+            <th class="text-left px-4 py-2 font-semibold text-gray-500 text-xs hidden sm:table-cell">Session</th>
             <th class="text-right px-4 py-2 font-semibold text-gray-500 text-xs">Actions</th>
           </tr>
         </thead>
@@ -386,6 +499,7 @@ function buildDayCard(dayObj) {
   // Accordion toggle
   header.addEventListener('click', e => {
     if (e.target.closest('.add-course-btn')) return;
+    if (e.target.closest('.copy-day-btn')) return;
     body.classList.toggle('hidden');
     header.querySelector('.accordion-arrow').classList.toggle('rotate-180');
   });
@@ -396,7 +510,19 @@ function buildDayCard(dayObj) {
     openCourseModal(null, dayObj.dayIndex);
   });
 
-  // Edit / Delete buttons
+  // Copy day button
+  header.querySelector('.copy-day-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    openCopyDayModal(dayObj.dayIndex);
+  });
+
+  // Edit / Delete / Duplicate buttons
+  body.querySelectorAll('.duplicate-course-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cls = findCourse(dayObj.dayIndex, btn.dataset.id);
+      if (cls) openCopyCourseModal(cls, dayObj.dayIndex);
+    });
+  });
   body.querySelectorAll('.edit-course-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const cls = findCourse(dayObj.dayIndex, btn.dataset.id);
@@ -416,10 +542,28 @@ function buildDayCard(dayObj) {
 
 function buildCourseRow(cls, dayIndex) {
   const disc = DISCIPLINES[cls.discipline] || { label: cls.discipline, color: '#9ca3af' };
+
+  // Resolve session for this course
+  const sess = getCourseSession(cls);
+  const isActive = sess && sess.is_current;
+  const sessName = sess ? escHtml(sess.name) : '—';
+
+  // Badge styling: active = green, inactive = gray
+  const badgeCss = isActive
+    ? 'bg-green-100 text-green-700 border border-green-200'
+    : 'bg-gray-100 text-gray-400 border border-gray-200';
+
+  const sessionBadge = `<span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium ${badgeCss}">${sessName}</span>`;
+
+  // Row styling: inactive session = lighter background + reduced opacity
+  const rowClass = isActive
+    ? 'border-b border-gray-50 hover:bg-gray-50 transition border-l-4'
+    : 'border-b border-gray-100 hover:bg-gray-100 transition border-l-4 bg-gray-50 opacity-60';
+
   return `
-    <tr class="border-b border-gray-50 hover:bg-gray-50 transition border-l-4 border-discipline-${cls.discipline}" style="border-left-color:${disc.color}">
+    <tr class="${rowClass}" style="border-left-color:${disc.color}">
       <td class="px-4 py-2 whitespace-nowrap text-gray-700">${escHtml(cls.time || '')}</td>
-      <td class="px-4 py-2 font-medium text-gray-900">${escHtml(cls.name || '')}</td>
+      <td class="px-4 py-2 font-medium ${isActive ? 'text-gray-900' : 'text-gray-500'}">${escHtml(cls.name || '')}</td>
       <td class="px-4 py-2 text-gray-500 hidden md:table-cell">${escHtml(cls.description || '')}</td>
       <td class="px-4 py-2 text-gray-500 hidden sm:table-cell">${escHtml(cls.ageGroup || '')}</td>
       <td class="px-4 py-2">
@@ -429,7 +573,9 @@ function buildCourseRow(cls, dayIndex) {
         </span>
       </td>
       <td class="px-4 py-2 text-gray-500 hidden sm:table-cell">${escHtml(cls.duration || '')}</td>
+      <td class="px-4 py-2 hidden sm:table-cell">${sessionBadge}</td>
       <td class="px-4 py-2 text-right whitespace-nowrap">
+        <button class="duplicate-course-btn text-purple-600 hover:text-purple-800 text-xs font-semibold mr-2" data-id="${escHtml(cls.id)}" data-day="${dayIndex}" title="Dupliquer vers une autre session">📋</button>
         <button class="edit-course-btn text-blue-600 hover:text-blue-800 text-xs font-semibold mr-2" data-id="${escHtml(cls.id)}" data-day="${dayIndex}">Modifier</button>
         <button class="delete-course-btn text-red-500 hover:text-red-700 text-xs font-semibold" data-id="${escHtml(cls.id)}" data-day="${dayIndex}">Supprimer</button>
       </td>
@@ -574,7 +720,7 @@ async function saveCourse() {
 function renderHolidays() {
   const tbody = document.getElementById('holidaysTableBody');
   if (!data.holidays || data.holidays.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-400 py-8">Aucun congé</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-400 py-8">Aucun congé</td></tr>';
     return;
   }
   const sorted = [...data.holidays].sort((a, b) => a.date.localeCompare(b.date));
@@ -583,6 +729,7 @@ function renderHolidays() {
       <td class="px-4 py-3 text-gray-700">${formatDate(h.date)}</td>
       <td class="px-4 py-3 text-gray-700">${h.endDate ? formatDate(h.endDate) : '—'}</td>
       <td class="px-4 py-3 font-medium text-gray-900">${escHtml(h.name)}</td>
+      <td class="px-4 py-3">${sessionBadgeHtml(h.sessionId || null)}</td>
       <td class="px-4 py-3 text-right whitespace-nowrap">
         <button class="edit-holiday-btn text-blue-600 hover:text-blue-800 text-xs font-semibold mr-2" data-id="${escHtml(h.id)}">Modifier</button>
         <button class="delete-holiday-btn text-red-500 hover:text-red-700 text-xs font-semibold" data-id="${escHtml(h.id)}">Supprimer</button>
@@ -622,6 +769,9 @@ function openHolidayModal(h) {
   document.getElementById('holidayDate').value    = h ? h.date    : '';
   document.getElementById('holidayEndDate').value = h ? (h.endDate || '') : '';
   document.getElementById('holidayName').value    = h ? h.name    : '';
+  // Session dropdown: preselect existing sessionId, or currentSessionId for new
+  const sessionSel = document.getElementById('holidaySessionId');
+  populateModalSessionSelect(sessionSel, h ? (h.sessionId || '') : currentSessionId);
   document.getElementById('holidayModal').classList.remove('hidden');
   document.getElementById('holidayName').focus();
 }
@@ -631,15 +781,16 @@ function closeHolidayModal() {
 }
 
 async function saveHoliday() {
-  const id      = document.getElementById('holidayId').value;
-  const date    = document.getElementById('holidayDate').value;
-  const endDate = document.getElementById('holidayEndDate').value;
-  const name    = document.getElementById('holidayName').value.trim();
+  const id        = document.getElementById('holidayId').value;
+  const date      = document.getElementById('holidayDate').value;
+  const endDate   = document.getElementById('holidayEndDate').value;
+  const name      = document.getElementById('holidayName').value.trim();
+  const sessionId = document.getElementById('holidaySessionId').value || null;
 
   if (!date) { showToast('La date de début est requise.', 'error'); return; }
   if (!name) { showToast('Le nom/raison est requis.', 'error'); return; }
 
-  const entry = { id: id || ('h' + Date.now()), date, name };
+  const entry = { id: id || ('h' + Date.now()), date, name, sessionId };
   if (endDate) entry.endDate = endDate;
 
   if (id) {
@@ -650,17 +801,16 @@ async function saveHoliday() {
   }
 
   closeHolidayModal();
-  renderHolidays();
 
   // Persist to Supabase
   try {
-    const row = { session_id: currentSessionId, date, end_date: endDate || null, label: name };
+    const row = { session_id: sessionId, date, end_date: endDate || null, label: name };
     if (id) {
       await sbRequest('schedule_holidays', 'PATCH', row, `?id=eq.${encodeURIComponent(id)}`);
     } else {
       const result = await sbRequest('schedule_holidays', 'POST', [row]);
       if (result && result[0]) {
-        // Update local ID with Supabase UUID
+        // Update local ID with Supabase UUID before rendering
         const localEntry = data.holidays[data.holidays.length - 1];
         localEntry.id = result[0].id;
       }
@@ -672,6 +822,7 @@ async function saveHoliday() {
     showToast('Sauvegardé localement (erreur Supabase)', 'warning');
     markUnsaved();
   }
+  renderHolidays();
 }
 
 // ── EVENTS (Tab 3) ───────────────────────────────────────────
@@ -679,7 +830,7 @@ async function saveHoliday() {
 function renderEvents() {
   const tbody = document.getElementById('eventsTableBody');
   if (!data.events || data.events.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-400 py-8">Aucun événement</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-400 py-8">Aucun événement</td></tr>';
     return;
   }
   const sorted = [...data.events].sort((a, b) => a.date.localeCompare(b.date));
@@ -692,6 +843,7 @@ function renderEvents() {
       <td class="px-4 py-3 text-gray-700 whitespace-nowrap">${dateDisplay}</td>
       <td class="px-4 py-3 font-medium text-gray-900">${escHtml(e.name)}</td>
       <td class="px-4 py-3 text-gray-600 text-xs">${escHtml(EVENT_TYPE_LABELS[e.type] || e.type)}</td>
+      <td class="px-4 py-3">${sessionBadgeHtml(e.sessionId || null)}</td>
       <td class="px-4 py-3">
         ${e.important ? '<span class="bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full">Oui</span>' : '<span class="text-gray-400 text-xs">—</span>'}
       </td>
@@ -737,6 +889,9 @@ function openEventModal(ev) {
   document.getElementById('eventDescription').value = ev ? (ev.description || '') : '';
   document.getElementById('eventType').value        = ev ? (ev.type || 'autre') : 'autre';
   document.getElementById('eventImportant').checked = ev ? !!ev.important  : false;
+  // Session dropdown: preselect existing sessionId, or currentSessionId for new
+  const sessionSel = document.getElementById('eventSessionId');
+  populateModalSessionSelect(sessionSel, ev ? (ev.sessionId || '') : currentSessionId);
   document.getElementById('eventModal').classList.remove('hidden');
   document.getElementById('eventName').focus();
 }
@@ -753,11 +908,12 @@ async function saveEvent() {
   const description = document.getElementById('eventDescription').value.trim();
   const type        = document.getElementById('eventType').value;
   const important   = document.getElementById('eventImportant').checked;
+  const sessionId   = document.getElementById('eventSessionId').value || null;
 
   if (!date) { showToast('La date de début est requise.', 'error'); return; }
   if (!name) { showToast('Le nom est requis.', 'error'); return; }
 
-  const entry = { id: id || ('e' + Date.now()), date, name, description, type, important };
+  const entry = { id: id || ('e' + Date.now()), date, name, description, type, important, sessionId };
   if (endDate) entry.endDate = endDate;
 
   if (id) {
@@ -768,12 +924,11 @@ async function saveEvent() {
   }
 
   closeEventModal();
-  renderEvents();
 
   // Persist to Supabase
   try {
     const row = {
-      session_id: currentSessionId,
+      session_id: sessionId,
       title: name,
       date,
       end_date: endDate || null,
@@ -786,6 +941,7 @@ async function saveEvent() {
     } else {
       const result = await sbRequest('schedule_events', 'POST', [row]);
       if (result && result[0]) {
+        // Update local ID with Supabase UUID before rendering
         const localEntry = data.events[data.events.length - 1];
         localEntry.id = result[0].id;
       }
@@ -797,6 +953,7 @@ async function saveEvent() {
     showToast('Sauvegardé localement (erreur Supabase)', 'warning');
     markUnsaved();
   }
+  renderEvents();
 }
 
 // ── PARAMS (Tab 4) ───────────────────────────────────────────
@@ -997,7 +1154,7 @@ function countWeekdayOccurrences(startStr, endStr, holidays) {
     const d = new Date(hStart + 'T00:00:00');
     const end = new Date(hEnd + 'T00:00:00');
     while (d <= end) {
-      holidayDates.add(d.toISOString().slice(0, 10));
+      holidayDates.add(localDateStr(d));
       d.setDate(d.getDate() + 1);
     }
   }
@@ -1005,7 +1162,7 @@ function countWeekdayOccurrences(startStr, endStr, holidays) {
   const cur = new Date(startStr + 'T00:00:00');
   const end = new Date(endStr + 'T00:00:00');
   while (cur <= end) {
-    const ymd = cur.toISOString().slice(0, 10);
+    const ymd = localDateStr(cur);
     if (!holidayDates.has(ymd)) {
       counts[cur.getDay()]++;
     }
@@ -1203,6 +1360,410 @@ async function deleteDateRange(id) {
   }
 }
 
+// ── COPY FEATURES (Phase 3) ──────────────────────────────────
+
+/**
+ * Fetch date_ranges for a given session ID from allDateRanges cache.
+ */
+function getDateRangesForSession(sessionId) {
+  return allDateRanges.filter(r => r.sessionId === sessionId);
+}
+
+/**
+ * Populate a date-range select with ranges for the given session.
+ * If includeMain is true, adds a "Session principale" option first.
+ */
+function populateDateRangeSelect(selectEl, sessionId, includeMain = true) {
+  const ranges = getDateRangesForSession(sessionId);
+  selectEl.innerHTML = '';
+  if (includeMain) {
+    selectEl.innerHTML = '<option value="">— Session principale —</option>';
+  }
+  if (ranges.length === 0 && !includeMain) {
+    selectEl.innerHTML = '<option value="">Aucune plage disponible</option>';
+    return;
+  }
+  for (const dr of ranges) {
+    const opt = document.createElement('option');
+    opt.value = dr.id;
+    opt.textContent = `${dr.name} (${formatDate(dr.startDate)} – ${formatDate(dr.endDate)})`;
+    selectEl.appendChild(opt);
+  }
+}
+
+/**
+ * Populate a session dropdown with all sessions.
+ * excludeSessionId: optionally exclude a session from the list.
+ */
+function populateSessionSelect(selectEl, excludeSessionId = null) {
+  selectEl.innerHTML = '<option value="">— Choisir une session —</option>';
+  for (const s of allSessionsData) {
+    if (s.id === excludeSessionId) continue;
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    const label = s.name + (s.is_current ? ' (active)' : '');
+    opt.textContent = label;
+    selectEl.appendChild(opt);
+  }
+}
+
+/**
+ * Populate a session dropdown for holiday/event modals.
+ * Includes a "Global (toutes les sessions)" option with value "".
+ * Preselects selectedId (or currentSessionId if null).
+ */
+function populateModalSessionSelect(selectEl, selectedId) {
+  const preselect = selectedId !== undefined ? selectedId : currentSessionId;
+  selectEl.innerHTML = '';
+  // Global option
+  const globalOpt = document.createElement('option');
+  globalOpt.value = '';
+  globalOpt.textContent = 'Global (toutes les sessions)';
+  if (preselect === null || preselect === '') globalOpt.selected = true;
+  selectEl.appendChild(globalOpt);
+  // One option per session
+  for (const s of allSessionsData) {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.name + (s.is_current ? ' (active)' : '');
+    if (s.id === preselect) opt.selected = true;
+    selectEl.appendChild(opt);
+  }
+}
+
+/**
+ * Check if a course with same name + day_index + start_time already exists
+ * in the destination session (via allDateRanges to resolve session).
+ * destSessionId: the session we're copying INTO
+ * Returns true if duplicate found.
+ */
+function courseExistsInSession(name, dayIndex, startTime, destSessionId) {
+  const destRangeIds = new Set(getDateRangesForSession(destSessionId).map(r => r.id));
+  for (const day of (data.schedule || [])) {
+    if (day.dayIndex !== dayIndex) continue;
+    for (const cls of (day.classes || [])) {
+      // Resolve session of this course
+      let clsSessionId = currentSessionId;
+      if (cls.dateRangeId) {
+        const dr = allDateRanges.find(r => r.id === cls.dateRangeId);
+        if (dr) clsSessionId = dr.sessionId;
+      }
+      if (clsSessionId === destSessionId && cls.name === name && cls.startTime === startTime) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * INSERT a single course into Supabase and local state.
+ * Returns the new course object.
+ */
+async function insertCopiedCourse(sourceCls, destDayIndex, destDateRangeId, destSessionId) {
+  const dayNames = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const newId = generateUUID();
+  const duration = calcDuration(sourceCls.startTime, sourceCls.endTime);
+  const time = `${sourceCls.startTime} - ${sourceCls.endTime}`;
+
+  const newCourse = {
+    id: newId,
+    time,
+    startTime: sourceCls.startTime,
+    endTime: sourceCls.endTime,
+    name: sourceCls.name,
+    description: sourceCls.description || '',
+    ageGroup: sourceCls.ageGroup || '',
+    discipline: sourceCls.discipline,
+    duration,
+    dateRangeId: destDateRangeId || '',
+  };
+
+  // Add to local state
+  const destDay = data.schedule.find(d => d.dayIndex === destDayIndex);
+  if (destDay) destDay.classes.push(newCourse);
+
+  // Persist to Supabase
+  await sbRequest('schedule_courses', 'POST', [{
+    id: newId,
+    day: dayNames[destDayIndex],
+    day_index: destDayIndex,
+    start_time: sourceCls.startTime,
+    end_time: sourceCls.endTime,
+    name: sourceCls.name,
+    description: sourceCls.description || '',
+    age_group: sourceCls.ageGroup || '',
+    discipline: sourceCls.discipline,
+    date_range_id: destDateRangeId || null,
+    is_active: true,
+    sort_order: destDay ? destDay.classes.length - 1 : 0,
+  }]);
+
+  return newCourse;
+}
+
+// ── 3.1 — Copy ONE COURSE ────────────────────────────────────
+
+function openCopyCourseModal(cls, dayIndex) {
+  const modal = document.getElementById('copyCourseModal');
+  document.getElementById('copyCourseSourceId').value = cls.id;
+  document.getElementById('copyCourseSourceName').value = `${cls.name} (${cls.time})`;
+  document.getElementById('copyCourseDestStart').value = cls.startTime;
+  document.getElementById('copyCourseDestEnd').value = cls.endTime;
+  document.getElementById('copyCourseDestDay').value = dayIndex;
+  document.getElementById('copyCourseWarning').classList.add('hidden');
+
+  const sessSelect = document.getElementById('copyCourseDestSession');
+  populateSessionSelect(sessSelect);
+  const drSelect = document.getElementById('copyCourseDestDateRange');
+  drSelect.innerHTML = '<option value="">— Choisir d\'abord une session —</option>';
+
+  sessSelect.onchange = () => {
+    const sid = sessSelect.value;
+    if (sid) {
+      populateDateRangeSelect(drSelect, sid, true);
+    } else {
+      drSelect.innerHTML = '<option value="">— Choisir d\'abord une session —</option>';
+    }
+  };
+
+  modal.classList.remove('hidden');
+}
+
+async function saveCopyCourse() {
+  const sourceId = document.getElementById('copyCourseSourceId').value;
+  const destSessionId = document.getElementById('copyCourseDestSession').value;
+  const destDateRangeId = document.getElementById('copyCourseDestDateRange').value;
+  const destDayIndex = parseInt(document.getElementById('copyCourseDestDay').value, 10);
+  const destStart = document.getElementById('copyCourseDestStart').value;
+  const destEnd = document.getElementById('copyCourseDestEnd').value;
+  const warnEl = document.getElementById('copyCourseWarning');
+  warnEl.classList.add('hidden');
+
+  if (!destSessionId) { warnEl.textContent = 'Choisir une session destination.'; warnEl.classList.remove('hidden'); return; }
+
+  // Find source course (search all days)
+  let sourceCls = null;
+  for (const day of (data.schedule || [])) {
+    const found = (day.classes || []).find(c => c.id === sourceId);
+    if (found) { sourceCls = found; break; }
+  }
+  if (!sourceCls) { warnEl.textContent = 'Cours source introuvable.'; warnEl.classList.remove('hidden'); return; }
+
+  // Anti-doublon
+  if (courseExistsInSession(sourceCls.name, destDayIndex, destStart, destSessionId)) {
+    warnEl.textContent = 'Ce cours existe déjà dans la session destination (même nom, même jour, même heure).';
+    warnEl.classList.remove('hidden');
+    return;
+  }
+
+  // Build modified source with destination times
+  const modifiedSource = { ...sourceCls, startTime: destStart, endTime: destEnd };
+
+  try {
+    await insertCopiedCourse(modifiedSource, destDayIndex, destDateRangeId, destSessionId);
+    document.getElementById('copyCourseModal').classList.add('hidden');
+    renderSchedule();
+    showToast('Cours dupliqué avec succès', 'success');
+    markSaved();
+  } catch (err) {
+    console.error('Copy course failed:', err);
+    warnEl.textContent = `Erreur : ${err.message}`;
+    warnEl.classList.remove('hidden');
+  }
+}
+
+// ── 3.2 — Copy ONE DAY ──────────────────────────────────────
+
+function openCopyDayModal(dayIndex) {
+  const modal = document.getElementById('copyDayModal');
+  const dayNames = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+
+  // Resolve which session is being filtered
+  const activeFilterSessionId = selectedCoursSessionId === '__all__'
+    ? null
+    : (selectedCoursSessionId === '__current__' ? currentSessionId : selectedCoursSessionId);
+
+  const sessName = activeFilterSessionId
+    ? (allSessionsData.find(s => s.id === activeFilterSessionId) || {}).name || '—'
+    : 'toutes sessions';
+
+  document.getElementById('copyDaySourceDayIndex').value = dayIndex;
+  document.getElementById('copyDaySourceSessionId').value = activeFilterSessionId || '';
+  document.getElementById('copyDaySourceLabel').textContent = `${dayNames[dayIndex]} (${sessName})`;
+  document.getElementById('copyDayDestDay').value = dayIndex;
+  document.getElementById('copyDayWarning').classList.add('hidden');
+
+  const sessSelect = document.getElementById('copyDayDestSession');
+  populateSessionSelect(sessSelect);
+  const drSelect = document.getElementById('copyDayDestDateRange');
+  drSelect.innerHTML = '<option value="">— Choisir d\'abord une session —</option>';
+
+  sessSelect.onchange = () => {
+    const sid = sessSelect.value;
+    if (sid) {
+      populateDateRangeSelect(drSelect, sid, true);
+    } else {
+      drSelect.innerHTML = '<option value="">— Choisir d\'abord une session —</option>';
+    }
+  };
+
+  modal.classList.remove('hidden');
+}
+
+async function saveCopyDay() {
+  const sourceDayIndex = parseInt(document.getElementById('copyDaySourceDayIndex').value, 10);
+  const sourceSessionId = document.getElementById('copyDaySourceSessionId').value || null;
+  const destSessionId = document.getElementById('copyDayDestSession').value;
+  const destDateRangeId = document.getElementById('copyDayDestDateRange').value;
+  const destDayIndex = parseInt(document.getElementById('copyDayDestDay').value, 10);
+  const warnEl = document.getElementById('copyDayWarning');
+  warnEl.classList.add('hidden');
+
+  if (!destSessionId) { warnEl.textContent = 'Choisir une session destination.'; warnEl.classList.remove('hidden'); return; }
+
+  // Get courses for source day + source session filter
+  const sourceDay = data.schedule.find(d => d.dayIndex === sourceDayIndex);
+  if (!sourceDay || !sourceDay.classes.length) {
+    warnEl.textContent = 'Aucun cours à copier pour ce jour.';
+    warnEl.classList.remove('hidden');
+    return;
+  }
+
+  let sourceCourses = sourceDay.classes;
+  if (sourceSessionId) {
+    sourceCourses = sourceCourses.filter(cls => {
+      const sess = getCourseSession(cls);
+      return sess && sess.id === sourceSessionId;
+    });
+  }
+
+  if (!sourceCourses.length) {
+    warnEl.textContent = 'Aucun cours à copier pour ce jour dans la session filtrée.';
+    warnEl.classList.remove('hidden');
+    return;
+  }
+
+  let copied = 0;
+  let skipped = 0;
+  const errors = [];
+
+  for (const cls of sourceCourses) {
+    if (courseExistsInSession(cls.name, destDayIndex, cls.startTime, destSessionId)) {
+      skipped++;
+      continue;
+    }
+    try {
+      await insertCopiedCourse(cls, destDayIndex, destDateRangeId, destSessionId);
+      copied++;
+    } catch (err) {
+      errors.push(cls.name);
+    }
+  }
+
+  document.getElementById('copyDayModal').classList.add('hidden');
+  renderSchedule();
+
+  if (errors.length) {
+    showToast(`${copied} cours copiés, ${skipped} doublons ignorés, ${errors.length} erreurs`, 'warning');
+  } else if (skipped > 0) {
+    showToast(`${copied} cours copiés — ${skipped} déjà existants ignorés`, 'info');
+  } else {
+    showToast(`${copied} cours copiés avec succès`, 'success');
+  }
+  if (copied > 0) markSaved();
+}
+
+// ── 3.3 — Copy ENTIRE SESSION ────────────────────────────────
+
+function openCopySessionModal() {
+  const modal = document.getElementById('copySessionModal');
+  const activeFilterSessionId = selectedCoursSessionId === '__all__'
+    ? null
+    : (selectedCoursSessionId === '__current__' ? currentSessionId : selectedCoursSessionId);
+
+  const sessName = activeFilterSessionId
+    ? (allSessionsData.find(s => s.id === activeFilterSessionId) || {}).name || '—'
+    : 'toutes sessions';
+
+  document.getElementById('copySessionSourceLabel').textContent = sessName;
+  document.getElementById('copySessionWarning').classList.add('hidden');
+
+  const sessSelect = document.getElementById('copySessionDestSession');
+  populateSessionSelect(sessSelect, activeFilterSessionId);
+
+  modal.classList.remove('hidden');
+}
+
+async function saveCopySession() {
+  const destSessionId = document.getElementById('copySessionDestSession').value;
+  const warnEl = document.getElementById('copySessionWarning');
+  warnEl.classList.add('hidden');
+
+  if (!destSessionId) { warnEl.textContent = 'Choisir une session destination.'; warnEl.classList.remove('hidden'); return; }
+
+  const activeFilterSessionId = selectedCoursSessionId === '__all__'
+    ? null
+    : (selectedCoursSessionId === '__current__' ? currentSessionId : selectedCoursSessionId);
+
+  if (!activeFilterSessionId) {
+    warnEl.textContent = 'Sélectionne une session source dans le filtre avant de copier.';
+    warnEl.classList.remove('hidden');
+    return;
+  }
+
+  // Gather all courses from source session
+  const allSourceCourses = [];
+  for (const dayObj of (data.schedule || [])) {
+    for (const cls of (dayObj.classes || [])) {
+      const sess = getCourseSession(cls);
+      if (sess && sess.id === activeFilterSessionId) {
+        allSourceCourses.push({ cls, dayIndex: dayObj.dayIndex });
+      }
+    }
+  }
+
+  if (!allSourceCourses.length) {
+    warnEl.textContent = 'Aucun cours dans la session source.';
+    warnEl.classList.remove('hidden');
+    return;
+  }
+
+  // Fetch destination date_ranges for matching
+  const destRanges = getDateRangesForSession(destSessionId);
+
+  let copied = 0;
+  let skipped = 0;
+  const errors = [];
+
+  for (const { cls, dayIndex } of allSourceCourses) {
+    if (courseExistsInSession(cls.name, dayIndex, cls.startTime, destSessionId)) {
+      skipped++;
+      continue;
+    }
+    // Use first date_range of destination if available, else null (session principale)
+    const destDateRangeId = destRanges.length > 0 ? destRanges[0].id : '';
+    try {
+      await insertCopiedCourse(cls, dayIndex, destDateRangeId, destSessionId);
+      copied++;
+    } catch (err) {
+      errors.push(cls.name);
+    }
+  }
+
+  document.getElementById('copySessionModal').classList.add('hidden');
+  renderSchedule();
+
+  if (errors.length) {
+    showToast(`${copied} cours copiés, ${skipped} doublons ignorés, ${errors.length} erreurs`, 'warning');
+  } else if (skipped > 0) {
+    showToast(`${copied} cours copiés — ${skipped} déjà existants ignorés`, 'info');
+  } else {
+    showToast(`${copied} cours copiés avec succès`, 'success');
+  }
+  if (copied > 0) markSaved();
+}
+
 // ── JSON Download ────────────────────────────────────────────
 
 function downloadJSON() {
@@ -1261,7 +1822,8 @@ function formatDate(dateStr) {
 // ── Modal Close Helpers ──────────────────────────────────────
 
 function closeAllModals() {
-  ['courseModal', 'holidayModal', 'eventModal', 'announcementModal', 'dateRangeModal'].forEach(id => {
+  ['courseModal', 'holidayModal', 'eventModal', 'announcementModal', 'dateRangeModal',
+   'copyCourseModal', 'copyDayModal', 'copySessionModal'].forEach(id => {
     document.getElementById(id).classList.add('hidden');
   });
 }
@@ -1311,6 +1873,11 @@ function initBindings() {
   document.getElementById('saveDateRangeBtn').addEventListener('click', saveDateRange);
   document.getElementById('dateRangeStart').addEventListener('change', updateDateRangePreview);
   document.getElementById('dateRangeEnd').addEventListener('change', updateDateRangePreview);
+
+  // Copy features (Phase 3)
+  document.getElementById('saveCopyCourseBtn').addEventListener('click', saveCopyCourse);
+  document.getElementById('saveCopyDayBtn').addEventListener('click', saveCopyDay);
+  document.getElementById('saveCopySessionBtn').addEventListener('click', saveCopySession);
 
   // Download (both buttons)
   document.getElementById('downloadBtnTop').addEventListener('click', downloadJSON);
@@ -1370,7 +1937,7 @@ async function loadSessions() {
 
 function getSessionStatus(s) {
   if (s.is_current) return { label: 'Actif', css: 'bg-green-100 text-green-700', dot: 'bg-green-500' };
-  const now = new Date().toISOString().slice(0, 10);
+  const now = localDateStr(new Date());
   if (s.start_date && s.start_date > now) return { label: 'En construction', css: 'bg-blue-100 text-blue-700', dot: 'bg-blue-500' };
   if (s.name && s.name.startsWith('[ARCHIVE]')) return { label: 'Archivé', css: 'bg-gray-100 text-gray-500', dot: 'bg-gray-400' };
   if (s.end_date && s.end_date < now) return { label: 'Archivé', css: 'bg-gray-100 text-gray-500', dot: 'bg-gray-400' };
