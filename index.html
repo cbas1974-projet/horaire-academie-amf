@@ -52,8 +52,13 @@
             Académie d'Arts<br>Martiaux Familial
           </h1>
           <div class="hero-accent-line mt-4 mx-auto lg:mx-0"></div>
-          <p class="mt-5 text-xl sm:text-2xl text-gray-300 font-medium">
-            Horaire des cours — <span id="session-name">chargement…</span>
+          <p class="mt-5 text-xl sm:text-2xl text-gray-300 font-medium flex items-center flex-wrap gap-2 justify-center lg:justify-start">
+            <span>Horaire des cours —</span>
+            <span class="flex items-center gap-1">
+              <button id="session-prev" class="session-nav-btn" aria-label="Session précédente" hidden>‹</button>
+              <span id="session-name">chargement…</span>
+              <button id="session-next" class="session-nav-btn" aria-label="Session suivante" hidden>›</button>
+            </span>
           </p>
           <div class="mt-1 flex flex-wrap items-center gap-3 justify-center lg:justify-start">
             <p class="text-sm text-gray-500" id="last-updated"></p>

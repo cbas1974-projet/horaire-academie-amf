@@ -47,6 +47,15 @@
   let activeFilters = new Set(['jiujitsu', 'muaythai', 'superkids', 'gracie']);
   let announcementDismissed = false; // stays closed within session
 
+  // Session navigation
+  let _allSessions    = [];   // all sessions ordered by start_date
+  let _rawCourses     = [];
+  let _rawHolidays    = [];
+  let _rawEvents      = [];
+  let _rawAnnouncements = [];
+  let _rawRanges      = [];
+  let _publicSessIdx  = 0;    // index into _allSessions currently displayed
+
   // Week view state
   let currentWeekStart = null;       // Date — Sunday of the displayed week
 
@@ -207,22 +216,7 @@
   /**
    * Fetch all data from Supabase and transform to appData format.
    */
-  async function loadFromSupabase() {
-    const [sessions, courses, holidays, events, announcements] = await Promise.all([
-      sbQuery('schedule_sessions', 'is_current=eq.true&limit=1'),
-      sbQuery('schedule_courses', 'is_active=eq.true&order=day_index,sort_order'),
-      sbQuery('schedule_holidays', 'select=*'),
-      sbQuery('schedule_events', 'select=*'),
-      sbQuery('schedule_announcements', 'select=*'),
-    ]);
-    // Fetch date ranges separately — table may not exist yet (pre-migration)
-    let ranges = [];
-    try { ranges = await sbQuery('schedule_date_ranges', 'select=*&order=sort_order'); } catch { }
-
-    const session = sessions[0];
-    if (!session) throw new Error('No current session found');
-
-    // Filter by session_id
+  function buildAppDataForSession(session, courses, holidays, events, announcements, ranges) {
     const sid = session.id;
     const sessCourses = courses.filter(c => c.session_id === sid);
     const sessHolidays = holidays.filter(h => h.session_id === sid);
@@ -296,6 +290,67 @@
       })),
       schedule,
     };
+  }
+
+  async function loadFromSupabase() {
+    const [sessions, courses, holidays, events, announcements] = await Promise.all([
+      sbQuery('schedule_sessions', 'order=start_date&limit=10'),
+      sbQuery('schedule_courses', 'is_active=eq.true&order=day_index,sort_order'),
+      sbQuery('schedule_holidays', 'select=*'),
+      sbQuery('schedule_events', 'select=*'),
+      sbQuery('schedule_announcements', 'select=*'),
+    ]);
+    let ranges = [];
+    try { ranges = await sbQuery('schedule_date_ranges', 'select=*&order=sort_order'); } catch { }
+
+    if (!sessions.length) throw new Error('No sessions found');
+
+    // Store raw data for navigation
+    _allSessions      = sessions;
+    _rawCourses       = courses;
+    _rawHolidays      = holidays;
+    _rawEvents        = events;
+    _rawAnnouncements = announcements;
+    _rawRanges        = ranges;
+
+    // Default: is_current session, or first
+    const currentIdx = sessions.findIndex(s => s.is_current);
+    _publicSessIdx = currentIdx >= 0 ? currentIdx : 0;
+
+    return buildAppDataForSession(
+      sessions[_publicSessIdx], courses, holidays, events, announcements, ranges
+    );
+  }
+
+  function switchPublicSession(delta) {
+    const next = _publicSessIdx + delta;
+    if (next < 0 || next >= _allSessions.length) return;
+    _publicSessIdx = next;
+    const data = buildAppDataForSession(
+      _allSessions[_publicSessIdx],
+      _rawCourses, _rawHolidays, _rawEvents, _rawAnnouncements, _rawRanges
+    );
+    appData = data;
+    renderHeader(data);
+    renderLegend(data.disciplines);
+    renderAnnouncements(data.announcements || []);
+    renderUpcomingEvents(data.events || [], data.sessionStart, data.sessionEnd);
+    renderUpcomingHolidays(data.holidays || []);
+    currentDayIdx = findDefaultDayIdx(data.schedule);
+    renderWeekView(data);
+    renderDayView(data);
+    if (currentView === 'mois') renderMonthView(data);
+    if (currentView === 'session') renderSessionView(data);
+    applyFilters();
+    updateSessionNavButtons();
+  }
+
+  function updateSessionNavButtons() {
+    const prev = document.getElementById('session-prev');
+    const next = document.getElementById('session-next');
+    if (!prev || !next) return;
+    prev.hidden = _publicSessIdx <= 0;
+    next.hidden = _publicSessIdx >= _allSessions.length - 1;
   }
 
   /* ============================================================
@@ -2185,6 +2240,9 @@
     bindViewToggle();
     bindAdmin();
 
+    document.getElementById('session-prev')?.addEventListener('click', () => switchPublicSession(-1));
+    document.getElementById('session-next')?.addEventListener('click', () => switchPublicSession(+1));
+
     try {
       const data = await loadSchedule();
       appData = data;
@@ -2225,6 +2283,9 @@
 
       // Apply any pre-existing filter state (all on by default)
       applyFilters();
+
+      // Show/hide session nav arrows
+      updateSessionNavButtons();
 
       // Countdown: initial + every minute
       updateCountdown();
