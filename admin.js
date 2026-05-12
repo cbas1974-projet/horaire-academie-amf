@@ -179,6 +179,7 @@ async function loadFromSupabase() {
         discipline: c.discipline,
         duration: calcDuration(c.start_time, c.end_time),
         dateRangeId: c.date_range_id || '',
+        sessionId: c.session_id || null,
       })),
   }));
 
@@ -344,6 +345,10 @@ function renderAll() {
  *  - Otherwise → belongs to currentSessionId
  */
 function getCourseSession(cls) {
+  if (cls.sessionId) {
+    const s = allSessionsData.find(s => s.id === cls.sessionId);
+    if (s) return s;
+  }
   if (cls.dateRangeId) {
     const dr = allDateRanges.find(r => r.id === cls.dateRangeId);
     if (dr) return allSessionsData.find(s => s.id === dr.sessionId) || null;
@@ -422,9 +427,8 @@ function renderSchedule() {
     return { ...dayObj, classes: filtered };
   });
 
-  // Only show days that have courses (or all days if not filtering)
+  // Always show all 7 days so you can add courses on any day
   scheduleWithFilter.forEach(dayObj => {
-    if (activeFilterSessionId !== null && dayObj.classes.length === 0) return; // skip empty days when filtering
     container.appendChild(buildDayCard(dayObj));
   });
 }
@@ -678,7 +682,7 @@ async function saveCourse() {
   if (!day) return;
 
   const courseId = id || ('c' + Date.now());
-  const localCourse = { id: courseId, time, startTime, endTime, name, description: desc, ageGroup, discipline, duration, dateRangeId };
+  const localCourse = { id: courseId, time, startTime, endTime, name, description: desc, ageGroup, discipline, duration, dateRangeId, sessionId: currentSessionId || null };
 
   if (id) {
     const idx = day.classes.findIndex(c => c.id === id);
@@ -703,6 +707,7 @@ async function saveCourse() {
       age_group: ageGroup,
       discipline,
       date_range_id: dateRangeId || null,
+      session_id: currentSessionId || null,
       is_active: true,
       sort_order: day.classes.length - 1,
     }]);
@@ -1438,16 +1443,15 @@ function populateModalSessionSelect(selectEl, selectedId) {
  * Returns true if duplicate found.
  */
 function courseExistsInSession(name, dayIndex, startTime, destSessionId) {
-  const destRangeIds = new Set(getDateRangesForSession(destSessionId).map(r => r.id));
   for (const day of (data.schedule || [])) {
     if (day.dayIndex !== dayIndex) continue;
     for (const cls of (day.classes || [])) {
-      // Resolve session of this course
-      let clsSessionId = currentSessionId;
-      if (cls.dateRangeId) {
+      let clsSessionId = cls.sessionId || null;
+      if (!clsSessionId && cls.dateRangeId) {
         const dr = allDateRanges.find(r => r.id === cls.dateRangeId);
         if (dr) clsSessionId = dr.sessionId;
       }
+      if (!clsSessionId) clsSessionId = currentSessionId;
       if (clsSessionId === destSessionId && cls.name === name && cls.startTime === startTime) {
         return true;
       }
@@ -1475,8 +1479,10 @@ async function insertCopiedCourse(sourceCls, destDayIndex, destDateRangeId, dest
     description: sourceCls.description || '',
     ageGroup: sourceCls.ageGroup || '',
     discipline: sourceCls.discipline,
+    type: sourceCls.type || null,
     duration,
     dateRangeId: destDateRangeId || '',
+    sessionId: destSessionId || null,
   };
 
   // Add to local state
@@ -1494,7 +1500,9 @@ async function insertCopiedCourse(sourceCls, destDayIndex, destDateRangeId, dest
     description: sourceCls.description || '',
     age_group: sourceCls.ageGroup || '',
     discipline: sourceCls.discipline,
+    type: sourceCls.type || null,
     date_range_id: destDateRangeId || null,
+    session_id: destSessionId || null,
     is_active: true,
     sort_order: destDay ? destDay.classes.length - 1 : 0,
   }]);

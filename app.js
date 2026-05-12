@@ -17,9 +17,9 @@
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVua3duZWxrd2x2bHlqdmJ3eXpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzU1MjgsImV4cCI6MjA4NDYxMTUyOH0.SzvyfEQGjfav927--cYQZVF8jJ47B6V9jHrNh6KuT6M';
 
   const DISCIPLINES_DEFAULT = {
-    jiujitsu:  { label: "Jiu-Jitsu d'autodéfense", color: '#c9a227' },
+    jiujitsu:  { label: "Jiu-Jitsu d'autodéfense", color: '#eab308' },
     muaythai:  { label: 'Muay Thai',               color: '#dc2626' },
-    superkids: { label: 'Programme Superkids',      color: '#22d3ee' },
+    superkids: { label: 'Programme Superkids',      color: '#ffffff' },
     gracie:    { label: 'Gracie Jiu-Jitsu',         color: '#2563eb' },
   };
 
@@ -224,6 +224,7 @@
 
     // Filter by session_id
     const sid = session.id;
+    const sessCourses = courses.filter(c => c.session_id === sid);
     const sessHolidays = holidays.filter(h => h.session_id === sid);
     const sessEvents = events.filter(e => e.session_id === sid);
     const sessAnnouncements = announcements.filter(a => a.session_id === sid);
@@ -236,7 +237,7 @@
       day,
       dayShort: dayShorts[i],
       dayIndex: i,
-      classes: courses
+      classes: sessCourses
         .filter(c => c.day_index === i)
         .map(c => ({
           id: c.id,
@@ -2091,6 +2092,27 @@
       if (sess) showSessionForm('duplicate', sess);
     };
 
+    async function refreshPublicSchedule() {
+      try {
+        const data = await loadSchedule();
+        appData = data;
+        if (data.sessionStart) currentMonthDate = new Date(data.sessionStart + 'T00:00:00');
+        renderHeader(data);
+        renderLegend(data.disciplines);
+        renderAnnouncements(data.announcements || []);
+        renderUpcomingEvents(data.events || [], data.sessionStart, data.sessionEnd);
+        renderUpcomingHolidays(data.holidays || []);
+        currentDayIdx = findDefaultDayIdx(data.schedule);
+        renderWeekView(data);
+        renderDayView(data);
+        if (currentView === 'mois') renderMonthView(data);
+        if (currentView === 'session') renderSessionView(data);
+        applyFilters();
+      } catch (err) {
+        adminToast('Erreur rechargement horaire: ' + err.message);
+      }
+    }
+
     window.__adminToggleActive = async () => {
       const sess = adminSessions[adminCurrentIdx];
       if (!sess) return;
@@ -2104,6 +2126,7 @@
           adminToast('Session desactivee');
           await adminLoadSessions();
           renderAdminPanel();
+          await refreshPublicSchedule();
         } catch (err) {
           adminToast('Erreur: ' + err.message);
         }
@@ -2121,6 +2144,7 @@
           const newIdx = adminSessions.findIndex(s => s.id === sess.id);
           if (newIdx >= 0) adminCurrentIdx = newIdx;
           renderAdminPanel();
+          await refreshPublicSchedule();
         } catch (err) {
           adminToast('Erreur: ' + err.message);
         }

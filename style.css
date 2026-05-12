@@ -18,8 +18,14 @@
   --orange-light:  #fb923c;
   --cyan:          #22d3ee;
   --cyan-light:    #67e8f9;
+  --superkids:     #ffffff;
+  --superkids-text:#e2e8f0;
+  --yellow:        #eab308;
+  --yellow-light:  #fde68a;
   --royal:         #2563eb;
   --royal-light:   #60a5fa;
+  --pink:          #ec4899;
+  --pink-light:    #f9a8d4;
   --text-primary:  #f0f0f0;
   --text-secondary:#a0aec0;
   --text-muted:    #6b7280;
@@ -249,15 +255,15 @@ body {
 
 /* Jiujitsu */
 .filter-btn[data-discipline="jiujitsu"] {
-  border-color: var(--gold);
-  color: var(--gold-light);
-  background: rgba(201, 162, 39, 0.1);
+  border-color: var(--yellow);
+  color: var(--yellow-light);
+  background: rgba(234, 179, 8, 0.1);
 }
-.filter-btn[data-discipline="jiujitsu"] .filter-dot { background: var(--gold); }
+.filter-btn[data-discipline="jiujitsu"] .filter-dot { background: var(--yellow); }
 .filter-btn[data-discipline="jiujitsu"].inactive {
   background: transparent;
   color: var(--text-muted);
-  border-color: rgba(201, 162, 39, 0.25);
+  border-color: rgba(234, 179, 8, 0.25);
 }
 .filter-btn[data-discipline="jiujitsu"].inactive .filter-dot { background: var(--text-muted); }
 
@@ -277,11 +283,11 @@ body {
 
 /* Superkids */
 .filter-btn[data-discipline="superkids"] {
-  border-color: var(--cyan);
-  color: var(--cyan-light);
+  border-color: var(--superkids);
+  color: var(--superkids-text);
   background: rgba(34, 211, 238, 0.1);
 }
-.filter-btn[data-discipline="superkids"] .filter-dot { background: var(--cyan); }
+.filter-btn[data-discipline="superkids"] .filter-dot { background: var(--superkids); }
 .filter-btn[data-discipline="superkids"].inactive {
   background: transparent;
   color: var(--text-muted);
@@ -484,8 +490,13 @@ body {
 }
 
 .timeline-block[data-discipline="jiujitsu"] {
-  background: rgba(201, 162, 39, 0.2);
-  border-color: rgba(201, 162, 39, 0.4);
+  background: rgba(234, 179, 8, 0.2);
+  border-color: rgba(234, 179, 8, 0.4);
+}
+
+.timeline-block[data-discipline="jiujitsu"][data-type="Ado"] {
+  background: rgba(234, 88, 12, 0.2);
+  border-color: rgba(234, 88, 12, 0.4);
 }
 
 .timeline-block[data-discipline="muaythai"] {
@@ -493,15 +504,14 @@ body {
   border-color: rgba(220, 38, 38, 0.4);
 }
 
-/* Muay Thai enfants → orange */
-.timeline-block[data-discipline="muaythai"][data-type="Enfants"] {
-  background: rgba(234, 88, 12, 0.2);
-  border-color: rgba(234, 88, 12, 0.4);
+.timeline-block[data-type="Femmes"] {
+  background: rgba(236, 72, 153, 0.2);
+  border-color: rgba(236, 72, 153, 0.4);
 }
 
 .timeline-block[data-discipline="superkids"] {
-  background: rgba(34, 211, 238, 0.18);
-  border-color: rgba(34, 211, 238, 0.35);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .timeline-block[data-discipline="gracie"] {
@@ -518,10 +528,11 @@ body {
   text-overflow: ellipsis;
 }
 
-.timeline-block[data-discipline="jiujitsu"] .tb-time    { color: var(--gold-light); }
+.timeline-block[data-discipline="jiujitsu"] .tb-time    { color: var(--yellow-light); }
+.timeline-block[data-discipline="jiujitsu"][data-type="Ado"] .tb-time { color: var(--orange-light); }
 .timeline-block[data-discipline="muaythai"] .tb-time    { color: var(--red-light); }
-.timeline-block[data-discipline="muaythai"][data-type="Enfants"] .tb-time { color: var(--orange-light); }
-.timeline-block[data-discipline="superkids"] .tb-time   { color: var(--cyan-light); }
+.timeline-block[data-type="Femmes"] .tb-time { color: var(--pink-light); }
+.timeline-block[data-discipline="superkids"] .tb-time   { color: var(--superkids-text); }
 .timeline-block[data-discipline="gracie"] .tb-time      { color: #93bbfd; }
 
 .tb-name {
@@ -535,10 +546,11 @@ body {
   -webkit-line-clamp: 4;
 }
 
-.timeline-block[data-discipline="jiujitsu"] .tb-name    { color: var(--gold-light); }
+.timeline-block[data-discipline="jiujitsu"] .tb-name    { color: var(--yellow-light); }
+.timeline-block[data-discipline="jiujitsu"][data-type="Ado"] .tb-name { color: var(--orange-light); }
 .timeline-block[data-discipline="muaythai"] .tb-name    { color: var(--red-light); }
-.timeline-block[data-discipline="muaythai"][data-type="Enfants"] .tb-name { color: var(--orange-light); }
-.timeline-block[data-discipline="superkids"] .tb-name   { color: var(--cyan-light); }
+.timeline-block[data-type="Femmes"] .tb-name { color: var(--pink-light); }
+.timeline-block[data-discipline="superkids"] .tb-name   { color: var(--superkids-text); }
 .timeline-block[data-discipline="gracie"] .tb-name      { color: #dbeafe; }
 
 .tb-age {
@@ -653,10 +665,11 @@ body {
   border-radius: 0;
 }
 
-.dc-left-border.jiujitsu  { background: var(--gold); }
+.dc-left-border.jiujitsu  { background: var(--yellow); }
+[data-type="Ado"] .dc-left-border.jiujitsu { background: var(--orange); }
 .dc-left-border.muaythai  { background: var(--red); }
-[data-type="Enfants"] .dc-left-border.muaythai { background: var(--orange); }
-.dc-left-border.superkids { background: var(--cyan); }
+[data-type="Femmes"] .dc-left-border { background: var(--pink) !important; }
+.dc-left-border.superkids { background: var(--superkids); }
 .dc-left-border.gracie    { background: var(--royal); }
 
 .dc-body {
@@ -682,10 +695,11 @@ body {
   border-radius: 9999px;
 }
 
-.dc-badge.jiujitsu  { background: rgba(201, 162, 39, 0.15); color: var(--gold-light); }
+.dc-badge.jiujitsu  { background: rgba(234, 179, 8, 0.15);  color: var(--yellow-light); }
+[data-type="Ado"] .dc-badge.jiujitsu { background: rgba(234, 88, 12, 0.15); color: var(--orange-light); }
 .dc-badge.muaythai  { background: rgba(220, 38, 38, 0.15);  color: var(--red-light); }
-[data-type="Enfants"] .dc-badge.muaythai { background: rgba(234, 88, 12, 0.15); color: var(--orange-light); }
-.dc-badge.superkids { background: rgba(34, 211, 238, 0.15); color: var(--cyan-light); }
+[data-type="Femmes"] .dc-badge { background: rgba(236, 72, 153, 0.15) !important; color: var(--pink-light) !important; }
+.dc-badge.superkids { background: rgba(255, 255, 255, 0.12); color: var(--superkids-text); }
 .dc-badge.gracie    { background: rgba(37, 99, 235, 0.15); color: var(--royal-light); }
 
 .dc-duration {
@@ -931,7 +945,7 @@ body {
   }
 
   .week-block-watermark {
-    opacity: 0.08 !important;
+    opacity: 0.18 !important;
   }
 
   .week-day-header {
@@ -1670,7 +1684,7 @@ body {
 
 .disc-logo.jiujitsu  { border-color: var(--gold); }
 .disc-logo.muaythai  { border-color: var(--red); }
-.disc-logo.superkids { border-color: var(--cyan); }
+.disc-logo.superkids { border-color: var(--superkids); }
 .disc-logo.gracie    { border-color: var(--royal); }
 
 /* ---- Mixed courses (superkids + enfants jiujitsu) — diagonal split ---- */
@@ -1685,19 +1699,19 @@ body {
 
 /* Day view card — diagonal left border */
 .dc-left-border.mixed-border {
-  background: linear-gradient(180deg, var(--cyan) 50%, var(--gold) 50%) !important;
+  background: linear-gradient(180deg, var(--superkids) 50%, var(--gold) 50%) !important;
 }
 
 /* Day view card — diagonal top accent */
 .day-card-v2.mixed-sk-jj {
   border-top: 2px solid transparent;
-  border-image: linear-gradient(90deg, var(--cyan), var(--gold)) 1;
+  border-image: linear-gradient(90deg, var(--superkids), var(--gold)) 1;
 }
 
 /* Month detail card — left accent */
 .month-detail-card.mixed-sk-jj {
   border-left: 3px solid transparent;
-  border-image: linear-gradient(180deg, var(--cyan), var(--gold)) 1;
+  border-image: linear-gradient(180deg, var(--superkids), var(--gold)) 1;
 }
 
 /* Week view — logo as centered watermark */
@@ -1710,7 +1724,7 @@ body {
   max-width: 48px;
   max-height: 80%;
   object-fit: contain;
-  opacity: 0.22;
+  opacity: 0.37;
   border-radius: 50%;
   pointer-events: none;
   filter: grayscale(0.3) brightness(1.5);
@@ -1729,7 +1743,7 @@ body {
 .dc-logo.jiujitsu  { border: 2px solid var(--gold); }
 .dc-logo.muaythai  { border: 2px solid var(--red); }
 [data-type="Enfants"] .dc-logo.muaythai { border-color: var(--orange); }
-.dc-logo.superkids { border: 2px solid var(--cyan); }
+.dc-logo.superkids { border: 2px solid var(--superkids); }
 .dc-logo.gracie    { border: 2px solid var(--royal); }
 
 .day-card-v2 .dc-logo {
@@ -1749,7 +1763,7 @@ body {
 
 .month-detail-logo.jiujitsu  { border: 2px solid var(--gold); }
 .month-detail-logo.muaythai  { border: 2px solid var(--red); }
-.month-detail-logo.superkids { border: 2px solid var(--cyan); }
+.month-detail-logo.superkids { border: 2px solid var(--superkids); }
 .month-detail-logo.gracie    { border: 2px solid var(--royal); }
 
 /* ============================================================
