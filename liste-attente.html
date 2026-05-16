@@ -171,6 +171,26 @@
       line-height: 1.6;
     }
 
+    /* ── Photos ── */
+    .photos {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      max-width: 520px;
+      margin-bottom: 32px;
+    }
+    .photos img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    @media (max-width: 480px) {
+      .photos { grid-template-columns: 1fr; }
+    }
+
     /* ── Footer ── */
     footer {
       margin-top: 48px;
@@ -220,7 +240,13 @@
     <p class="adresse">📍 245, rue Gamble Ouest, Rouyn-Noranda</p>
   </div>
 
-  <!-- Formulaire Netlify -->
+  <!-- Photos du projet -->
+  <div class="photos">
+    <img src="images/Bâtiments.jpg" alt="Extérieur — 245 rue Gamble Ouest" />
+    <img src="images/Dojo.jpg" alt="Intérieur — Nouveau dojo" />
+  </div>
+
+  <!-- Formulaire -->
   <div class="card" id="form-card">
     <p class="card-title">Je veux être informé(e) en priorité pour septembre</p>
 
