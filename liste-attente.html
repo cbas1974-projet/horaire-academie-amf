@@ -294,15 +294,16 @@
 
       <div class="field row">
         <div>
-          <label for="age">Âge du participant</label>
+          <label for="age">Âge au 1er septembre</label>
           <input id="age" name="age" type="number" min="2" max="80" placeholder="Ex : 6" required />
         </div>
         <div>
-          <label for="est_membre">Déjà membre ?</label>
+          <label for="est_membre">Statut</label>
           <select id="est_membre" name="est_membre" required>
             <option value="" disabled selected>Choisir…</option>
-            <option value="Non">Non — nouveau</option>
-            <option value="Oui">Oui — ancien membre</option>
+            <option value="Déjà membre">Déjà membre</option>
+            <option value="Ancien membre">Ancien membre</option>
+            <option value="Nouveau">Nouveau</option>
           </select>
         </div>
       </div>
