@@ -100,6 +100,57 @@
       color: var(--text);
     }
 
+    /* ── Section label ── */
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gold);
+      margin: 8px 0 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Bloc enfant ── */
+    .enfant-bloc {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .enfant-bloc .suppr {
+      position: absolute;
+      top: 10px; right: 12px;
+      background: none;
+      border: none;
+      color: #6b7280;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+    .enfant-bloc .suppr:hover { color: #ef4444; }
+
+    /* ── Bouton ajouter ── */
+    .btn-add {
+      width: 100%;
+      background: transparent;
+      border: 1px dashed var(--gold);
+      color: var(--gold);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      margin-bottom: 16px;
+      transition: background 0.2s;
+    }
+    .btn-add:hover { background: rgba(201,162,39,0.08); }
+
     /* ── Row 2 colonnes ── */
     .field.row {
       display: grid;
@@ -267,35 +318,21 @@
         <input id="nom" name="nom" type="text" placeholder="Ex : Marie Tremblay" required />
       </div>
 
+      <!-- Infos parent -->
       <div class="field">
-        <label for="discipline">Cours souhaité</label>
-        <select id="discipline" name="discipline" required>
-          <option value="" disabled selected>Choisir un cours…</option>
-          <optgroup label="SuperKids">
-            <option value="SuperKids — Parents-enfants (3-7 ans)">SuperKids — Parents-enfants (3-7 ans)</option>
-          </optgroup>
-          <optgroup label="Jiu-Jitsu">
-            <option value="Jiu-Jitsu — Enfants (7-10 ans)">Jiu-Jitsu — Enfants (7-10 ans)</option>
-            <option value="Jiu-Jitsu — Ados/Pré-ados (10 ans et +)">Jiu-Jitsu — Ados/Pré-ados (10 ans et +)</option>
-            <option value="Jiu-Jitsu — Adultes">Jiu-Jitsu — Adultes</option>
-          </optgroup>
-          <optgroup label="Autodéfense">
-            <option value="Autodéfense Femme (12 ans et +)">Autodéfense Femme (12 ans et +)</option>
-          </optgroup>
-          <optgroup label="Muay Thai">
-            <option value="Muay Thai — Enfants (7 ans et +)">Muay Thai — Enfants (7 ans et +)</option>
-            <option value="Muay Thai — Adultes">Muay Thai — Adultes</option>
-          </optgroup>
-          <optgroup label="Gracie Combatives">
-            <option value="Gracie Combatives — Adultes">Gracie Combatives — Adultes</option>
-          </optgroup>
-        </select>
+        <label for="nom_parent">Votre nom (parent / adulte)</label>
+        <input id="nom_parent" name="nom_parent" type="text" placeholder="Ex : Marie Tremblay" required />
+      </div>
+
+      <div class="field">
+        <label for="courriel">Courriel</label>
+        <input id="courriel" name="courriel" type="email" placeholder="votre@courriel.com" required />
       </div>
 
       <div class="field row">
         <div>
-          <label for="age">Âge au 1er septembre</label>
-          <input id="age" name="age" type="number" min="2" max="80" placeholder="Ex : 6" required />
+          <label for="telephone">Téléphone <span class="opt">(facultatif)</span></label>
+          <input id="telephone" name="telephone" type="tel" placeholder="819 000-0000" />
         </div>
         <div>
           <label for="est_membre">Statut</label>
@@ -308,20 +345,43 @@
         </div>
       </div>
 
-      <div class="field">
-        <label for="enfant">Nom de l'enfant <span class="opt">(si inscription pour un enfant)</span></label>
-        <input id="enfant" name="nom_enfant" type="text" placeholder="Facultatif" />
+      <!-- Enfants -->
+      <div class="section-label">Participant(s)</div>
+      <div id="enfants-list">
+        <div class="enfant-bloc">
+          <div class="field">
+            <label>Nom du participant</label>
+            <input type="text" name="enfant_nom[]" placeholder="Prénom de l'enfant (ou votre prénom si adulte)" required />
+          </div>
+          <div class="field row">
+            <div>
+              <label>Âge au 1er septembre</label>
+              <input type="number" name="enfant_age[]" min="2" max="80" placeholder="Ex : 6" required />
+            </div>
+            <div>
+              <label>Cours souhaité</label>
+              <select name="enfant_discipline[]" required>
+                <option value="" disabled selected>Choisir…</option>
+                <optgroup label="SuperKids">
+                  <option>SuperKids — Parents-enfants (3-7 ans)</option>
+                </optgroup>
+                <optgroup label="Jiu-Jitsu / Autodéfense">
+                  <option>Jiu-Jitsu — Enfants (7-10 ans)</option>
+                  <option>Jiu-Jitsu — Ados/Pré-ados (10 ans et +)</option>
+                  <option>Jiu-Jitsu / Autodéfense — Adultes</option>
+                  <option>Autodéfense Femme (12 ans et +)</option>
+                </optgroup>
+                <optgroup label="Muay Thai">
+                  <option>Muay Thai — Enfants (7 ans et +)</option>
+                  <option>Muay Thai — Adultes</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="field">
-        <label for="courriel">Courriel</label>
-        <input id="courriel" name="courriel" type="email" placeholder="votre@courriel.com" required />
-      </div>
-
-      <div class="field">
-        <label for="telephone">Téléphone <span class="opt">(facultatif)</span></label>
-        <input id="telephone" name="telephone" type="tel" placeholder="819 000-0000" />
-      </div>
+      <button type="button" class="btn-add" onclick="ajouterEnfant()">+ Ajouter un participant</button>
 
       <button type="submit" class="btn">Je veux ma place pour septembre →</button>
 
@@ -351,24 +411,66 @@
   <script>
     const API_URL = 'https://leads.srv1302277.hstgr.cloud/submit';
 
+    const TEMPLATE_COURS = `
+      <optgroup label="SuperKids">
+        <option>SuperKids — Parents-enfants (3-7 ans)</option>
+      </optgroup>
+      <optgroup label="Jiu-Jitsu / Autodéfense">
+        <option>Jiu-Jitsu — Enfants (7-10 ans)</option>
+        <option>Jiu-Jitsu — Ados/Pré-ados (10 ans et +)</option>
+        <option>Jiu-Jitsu / Autodéfense — Adultes</option>
+        <option>Autodéfense Femme (12 ans et +)</option>
+      </optgroup>
+      <optgroup label="Muay Thai">
+        <option>Muay Thai — Enfants (7 ans et +)</option>
+        <option>Muay Thai — Adultes</option>
+      </optgroup>`;
+
+    function ajouterEnfant() {
+      const liste = document.getElementById('enfants-list');
+      const bloc = document.createElement('div');
+      bloc.className = 'enfant-bloc';
+      bloc.innerHTML = `
+        <button type="button" class="suppr" onclick="this.parentElement.remove()" title="Retirer">✕</button>
+        <div class="field">
+          <label>Nom du participant</label>
+          <input type="text" name="enfant_nom[]" placeholder="Prénom" required />
+        </div>
+        <div class="field row">
+          <div>
+            <label>Âge au 1er septembre</label>
+            <input type="number" name="enfant_age[]" min="2" max="80" placeholder="Ex : 8" required />
+          </div>
+          <div>
+            <label>Cours souhaité</label>
+            <select name="enfant_discipline[]" required>
+              <option value="" disabled selected>Choisir…</option>
+              ${TEMPLATE_COURS}
+            </select>
+          </div>
+        </div>`;
+      liste.appendChild(bloc);
+    }
+
     async function handleSubmit(e) {
       e.preventDefault();
       const form = e.target;
-
       if (form.querySelector('[name="bot-field"]').value) return;
 
       const btn = form.querySelector('.btn');
       btn.textContent = 'Envoi en cours…';
       btn.disabled = true;
 
+      const noms       = [...form.querySelectorAll('[name="enfant_nom[]"]')].map(i => i.value.trim());
+      const ages       = [...form.querySelectorAll('[name="enfant_age[]"]')].map(i => parseInt(i.value) || null);
+      const disciplines = [...form.querySelectorAll('[name="enfant_discipline[]"]')].map(i => i.value);
+
       const payload = {
-        nom:        form.querySelector('#nom').value.trim(),
-        discipline: form.querySelector('#discipline').value,
-        age:        parseInt(form.querySelector('#age').value) || null,
-        est_membre: form.querySelector('#est_membre').value,
-        nom_enfant: form.querySelector('#enfant').value.trim() || null,
+        nom_parent: form.querySelector('#nom_parent').value.trim(),
         courriel:   form.querySelector('#courriel').value.trim(),
         telephone:  form.querySelector('#telephone').value.trim() || null,
+        est_membre: form.querySelector('#est_membre').value,
+        enfants:    noms.map((n, i) => ({ nom: n, age: ages[i], discipline: disciplines[i] }))
       };
 
       try {
@@ -377,9 +479,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-
         if (!res.ok) throw new Error(await res.text());
-
         document.getElementById('hero').style.display = 'none';
         document.getElementById('form-card').style.display = 'none';
         document.getElementById('merci').style.display = 'block';
