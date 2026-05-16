@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Liste d'attente — Septembre 2026 | Académie d'arts martiaux familial</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f1a;
+      --bg-card:   #16213e;
+      --bg-input:  #1a1a2e;
+      --gold:      #c9a227;
+      --gold-light:#e6c84e;
+      --border:    rgba(201, 162, 39, 0.25);
+      --text:      #f0f0f0;
+      --muted:     #a0aec0;
+      --radius:    12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Logo ── */
+    .logo-wrap {
+      margin-bottom: 32px;
+      text-align: center;
+    }
+    .logo-wrap img {
+      height: 80px;
+      width: auto;
+    }
+
+    /* ── Badge nouveau local ── */
+    .badge {
+      display: inline-block;
+      background: rgba(201,162,39,0.15);
+      border: 1px solid var(--gold);
+      color: var(--gold-light);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 999px;
+      margin-bottom: 20px;
+    }
+
+    /* ── Titre ── */
+    .hero {
+      text-align: center;
+      max-width: 560px;
+      margin-bottom: 40px;
+    }
+    .hero h1 {
+      font-size: clamp(1.6rem, 5vw, 2.4rem);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    .hero h1 span { color: var(--gold); }
+    .hero p {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.65;
+    }
+    .hero .adresse {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: var(--gold-light);
+      font-weight: 500;
+    }
+
+    /* ── Card formulaire ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: var(--text);
+    }
+
+    /* ── Champs ── */
+    .field {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    label .opt {
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+    input, select, textarea {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 12px 16px;
+      transition: border-color 0.2s;
+      outline: none;
+      appearance: none;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--gold);
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0aec0' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 40px;
+    }
+    select option { background: #1a1a2e; }
+
+    /* ── Bouton ── */
+    .btn {
+      width: 100%;
+      background: var(--gold);
+      color: #0f0f1a;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      padding: 16px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn:hover { background: var(--gold-light); }
+    .btn:active { transform: scale(0.98); }
+
+    /* ── Note bas ── */
+    .note {
+      margin-top: 20px;
+      font-size: 0.82rem;
+      color: #6b7280;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 48px;
+      text-align: center;
+      color: #4b5563;
+      font-size: 0.8rem;
+    }
+    footer a { color: var(--gold); text-decoration: none; }
+
+    /* ── Page de confirmation (hidden par défaut) ── */
+    .merci {
+      display: none;
+      text-align: center;
+      max-width: 480px;
+    }
+    .merci .check {
+      font-size: 3.5rem;
+      margin-bottom: 20px;
+    }
+    .merci h2 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      color: var(--gold);
+    }
+    .merci p { color: var(--muted); line-height: 1.7; }
+  </style>
+</head>
+<body>
+
+  <!-- Logo -->
+  <div class="logo-wrap">
+    <img src="logo.png" alt="Académie d'arts martiaux familial" />
+  </div>
+
+  <!-- Badge -->
+  <div class="badge">Nouveau local · Septembre 2026</div>
+
+  <!-- Titre -->
+  <div class="hero" id="hero">
+    <h1>On déménage.<br><span>Votre place vous attend.</span></h1>
+    <p>
+      En septembre, l'Académie ouvre ses portes dans un bâtiment tout neuf —
+      à l'emplacement de l'ancien restaurant O Poulet.
+      Plus d'espace, plus de créneaux, pour toutes les disciplines.
+    </p>
+    <p class="adresse">📍 245, rue Gamble Ouest, Rouyn-Noranda</p>
+  </div>
+
+  <!-- Formulaire Netlify -->
+  <div class="card" id="form-card">
+    <p class="card-title">Je veux être informé(e) en priorité pour septembre</p>
+
+    <form onsubmit="handleSubmit(event)">
+      <!-- Anti-spam honeypot -->
+      <input type="text" name="bot-field" style="display:none;position:absolute;left:-9999px" tabindex="-1" autocomplete="off" />
+
+      <div class="field">
+        <label for="nom">Prénom et nom</label>
+        <input id="nom" name="nom" type="text" placeholder="Ex : Marie Tremblay" required />
+      </div>
+
+      <div class="field">
+        <label for="discipline">Discipline souhaitée</label>
+        <select id="discipline" name="discipline" required>
+          <option value="" disabled selected>Choisir une discipline…</option>
+          <optgroup label="SuperKids (parents-enfants)">
+            <option value="SuperKids — Parents-enfants (3-7 ans)">SuperKids — Parents-enfants (3-7 ans)</option>
+          </optgroup>
+          <optgroup label="Jiu-Jitsu">
+            <option value="Jiu-Jitsu — Enfants (7-12 ans)">Jiu-Jitsu — Enfants (7-12 ans)</option>
+            <option value="Jiu-Jitsu — Ados">Jiu-Jitsu — Ados</option>
+            <option value="Jiu-Jitsu — Adultes">Jiu-Jitsu — Adultes</option>
+          </optgroup>
+          <optgroup label="Muay Thai">
+            <option value="Muay Thai — Enfants (7+)">Muay Thai — Enfants (7+)</option>
+            <option value="Muay Thai — Adultes">Muay Thai — Adultes</option>
+          </optgroup>
+          <optgroup label="Gracie Combatives">
+            <option value="Gracie Combatives — Adultes">Gracie Combatives — Adultes</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="enfant">Nom de l'enfant <span class="opt">(si inscription pour un enfant)</span></label>
+        <input id="enfant" name="nom_enfant" type="text" placeholder="Facultatif" />
+      </div>
+
+      <div class="field">
+        <label for="courriel">Courriel</label>
+        <input id="courriel" name="courriel" type="email" placeholder="votre@courriel.com" required />
+      </div>
+
+      <div class="field">
+        <label for="telephone">Téléphone <span class="opt">(facultatif)</span></label>
+        <input id="telephone" name="telephone" type="tel" placeholder="819 000-0000" />
+      </div>
+
+      <button type="submit" class="btn">Je veux ma place pour septembre →</button>
+
+      <p class="note">
+        Aucun engagement. On vous contacte en juillet avec tous les détails.<br />
+        Les personnes sur cette liste ont priorité sur les nouvelles inscriptions.
+      </p>
+    </form>
+  </div>
+
+  <!-- Confirmation (affiché après soumission JS) -->
+  <div class="merci" id="merci">
+    <div class="check">✅</div>
+    <h2>C'est noté !</h2>
+    <p>
+      On vous contacte en <strong>juillet</strong> avec les détails sur les horaires,
+      les tarifs et les nouveaux locaux.<br /><br />
+      Vous avez la priorité sur les nouvelles inscriptions.
+    </p>
+  </div>
+
+  <footer>
+    <a href="/">← Voir l'horaire des cours</a><br /><br />
+    Académie d'arts martiaux familial · Rouyn-Noranda
+  </footer>
+
+  <script>
+    const API_URL = 'https://leads.srv1302277.hstgr.cloud/submit';
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      const form = e.target;
+
+      if (form.querySelector('[name="bot-field"]').value) return;
+
+      const btn = form.querySelector('.btn');
+      btn.textContent = 'Envoi en cours…';
+      btn.disabled = true;
+
+      const payload = {
+        nom:        form.querySelector('#nom').value.trim(),
+        discipline: form.querySelector('#discipline').value,
+        nom_enfant: form.querySelector('#enfant').value.trim() || null,
+        courriel:   form.querySelector('#courriel').value.trim(),
+        telephone:  form.querySelector('#telephone').value.trim() || null,
+      };
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+
+        document.getElementById('hero').style.display = 'none';
+        document.getElementById('form-card').style.display = 'none';
+        document.getElementById('merci').style.display = 'block';
+      } catch (err) {
+        btn.textContent = 'Je veux ma place pour septembre →';
+        btn.disabled = false;
+        alert('Une erreur est survenue. Réessaie ou contacte-nous directement.');
+        console.error(err);
+      }
+    }
+  </script>
+
+</body>
+</html>
