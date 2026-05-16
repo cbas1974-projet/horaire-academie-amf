@@ -100,6 +100,14 @@
       color: var(--text);
     }
 
+    /* ── Row 2 colonnes ── */
+    .field.row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 400px) { .field.row { grid-template-columns: 1fr; } }
+
     /* ── Champs ── */
     .field {
       margin-bottom: 20px;
@@ -260,25 +268,43 @@
       </div>
 
       <div class="field">
-        <label for="discipline">Discipline souhaitée</label>
+        <label for="discipline">Cours souhaité</label>
         <select id="discipline" name="discipline" required>
-          <option value="" disabled selected>Choisir une discipline…</option>
-          <optgroup label="SuperKids (parents-enfants)">
+          <option value="" disabled selected>Choisir un cours…</option>
+          <optgroup label="SuperKids">
             <option value="SuperKids — Parents-enfants (3-7 ans)">SuperKids — Parents-enfants (3-7 ans)</option>
           </optgroup>
           <optgroup label="Jiu-Jitsu">
-            <option value="Jiu-Jitsu — Enfants (7-12 ans)">Jiu-Jitsu — Enfants (7-12 ans)</option>
-            <option value="Jiu-Jitsu — Ados">Jiu-Jitsu — Ados</option>
+            <option value="Jiu-Jitsu — Enfants (7-10 ans)">Jiu-Jitsu — Enfants (7-10 ans)</option>
+            <option value="Jiu-Jitsu — Ados/Pré-ados (10 ans et +)">Jiu-Jitsu — Ados/Pré-ados (10 ans et +)</option>
             <option value="Jiu-Jitsu — Adultes">Jiu-Jitsu — Adultes</option>
           </optgroup>
+          <optgroup label="Autodéfense">
+            <option value="Autodéfense Femme (12 ans et +)">Autodéfense Femme (12 ans et +)</option>
+          </optgroup>
           <optgroup label="Muay Thai">
-            <option value="Muay Thai — Enfants (7+)">Muay Thai — Enfants (7+)</option>
+            <option value="Muay Thai — Enfants (7 ans et +)">Muay Thai — Enfants (7 ans et +)</option>
             <option value="Muay Thai — Adultes">Muay Thai — Adultes</option>
           </optgroup>
           <optgroup label="Gracie Combatives">
             <option value="Gracie Combatives — Adultes">Gracie Combatives — Adultes</option>
           </optgroup>
         </select>
+      </div>
+
+      <div class="field row">
+        <div>
+          <label for="age">Âge du participant</label>
+          <input id="age" name="age" type="number" min="2" max="80" placeholder="Ex : 6" required />
+        </div>
+        <div>
+          <label for="est_membre">Déjà membre ?</label>
+          <select id="est_membre" name="est_membre" required>
+            <option value="" disabled selected>Choisir…</option>
+            <option value="Non">Non — nouveau</option>
+            <option value="Oui">Oui — ancien membre</option>
+          </select>
+        </div>
       </div>
 
       <div class="field">
@@ -337,6 +363,8 @@
       const payload = {
         nom:        form.querySelector('#nom').value.trim(),
         discipline: form.querySelector('#discipline').value,
+        age:        parseInt(form.querySelector('#age').value) || null,
+        est_membre: form.querySelector('#est_membre').value,
         nom_enfant: form.querySelector('#enfant').value.trim() || null,
         courriel:   form.querySelector('#courriel').value.trim(),
         telephone:  form.querySelector('#telephone').value.trim() || null,
