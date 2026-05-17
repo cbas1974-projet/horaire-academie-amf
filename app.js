@@ -117,6 +117,14 @@
       .replace(/'/g, '&#39;');
   }
 
+  function colorOverrideStyle(hex) {
+    if (!hex || hex.length < 7) return '';
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return ` background-color:rgba(${r},${g},${b},0.2); border-color:rgba(${r},${g},${b},0.4);`;
+  }
+
   /**
    * Format a course name: if it contains " & ", split into 2 group lines
    * with a visual separator between them. Safe for inline HTML use.
@@ -245,6 +253,7 @@
           type: c.type || '',
           duration: calcDurationStr(c.start_time, c.end_time),
           dateRangeId: c.date_range_id || '',
+          colorOverride: c.color_override || '',
         })),
     }));
 
@@ -313,9 +322,11 @@
     _rawAnnouncements = announcements;
     _rawRanges        = ranges;
 
-    // Default: is_current session, or first
-    const currentIdx = sessions.findIndex(s => s.is_current);
-    _publicSessIdx = currentIdx >= 0 ? currentIdx : 0;
+    // Default: session englobant aujourd'hui → sinon la plus récente (dernière)
+    const today = new Date().toISOString().slice(0, 10);
+    let bestIdx = sessions.findIndex(s => s.start_date <= today && s.end_date >= today);
+    if (bestIdx < 0) bestIdx = sessions.length - 1;
+    _publicSessIdx = bestIdx;
 
     return buildAppDataForSession(
       sessions[_publicSessIdx], courses, holidays, events, announcements, ranges
@@ -934,21 +945,23 @@
           const hiddenCls = activeFilters.has(cls.discipline) ? '' : ' discipline-hidden';
           const ariaHidden = hiddenCls ? ' aria-hidden="true"' : '';
           const mixed = isMixedCourse(cls);
+          const coStyle = cls.colorOverride ? colorOverrideStyle(cls.colorOverride) : '';
+          const coLabel = cls.colorOverride ? ` style="color:${cls.colorOverride};"` : '';
 
           return `
             <div
               class="timeline-block${hiddenCls}${mixed ? ' mixed-sk-jj' : ''}"
               data-discipline="${esc(cls.discipline)}"
               data-type="${esc(cls.type || '')}"
-              style="top:${topPx}px; height:${heightPx}px;"
+              style="top:${topPx}px; height:${heightPx}px;${coStyle}"
               role="listitem"
               aria-label="${esc(cls.name)}, ${esc(cls.ageGroup)}, ${esc(cls.time)}"
               ${ariaHidden}
               title="${esc(cls.name)} — ${esc(cls.ageGroup)} — ${esc(cls.time)}"
               tabindex="0">
               ${DISC_LOGOS[cls.discipline] ? `<img src="${DISC_LOGOS[cls.discipline]}" alt="" class="week-block-watermark" loading="lazy">` : ''}
-              <span class="tb-time">${esc(cls.startTime)} - ${esc(cls.endTime)}</span>
-              <span class="tb-name">${formatCourseName(cls.name)}</span>
+              <span class="tb-time"${coLabel}>${esc(cls.startTime)} - ${esc(cls.endTime)}</span>
+              <span class="tb-name"${coLabel}>${formatCourseName(cls.name)}</span>
               <span class="tb-age">${esc(cls.ageGroup)}</span>
             </div>`;
         }).join('');
