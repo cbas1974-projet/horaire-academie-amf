@@ -39,7 +39,7 @@
       text-align: center;
     }
     .logo-wrap img {
-      height: 80px;
+      height: 92px;
       width: auto;
     }
 
@@ -259,6 +259,46 @@
     }
     footer a { color: var(--gold); text-decoration: none; }
 
+    /* ── Récap avant envoi ── */
+    .recap-box {
+      background: rgba(201,162,39,0.08);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    .recap-titre {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gold);
+      margin-bottom: 14px;
+    }
+    .recap-ligne {
+      font-size: 0.9rem;
+      color: var(--muted);
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .recap-ligne:last-child { border-bottom: none; }
+    .recap-ligne strong { color: var(--text); }
+    .btn-modifier {
+      width: 100%;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-modifier:hover { border-color: var(--gold); color: var(--gold); }
+
     /* ── Page de confirmation (hidden par défaut) ── */
     .merci {
       display: none;
@@ -305,6 +345,43 @@
     <img src="images/Dojo.jpg" alt="Intérieur — Nouveau dojo" />
   </div>
 
+  <!-- Lien horaire -->
+  <div style="width:100%;max-width:520px;margin-bottom:24px;text-align:center">
+    <a href="/automne-2026" style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;background:rgba(201,162,39,0.1);border:1px solid var(--border);color:var(--gold-light);font-size:0.9rem;font-weight:600;padding:12px 24px;border-radius:8px;text-decoration:none;transition:background 0.2s"
+       onmouseover="this.style.background='rgba(201,162,39,0.18)'" onmouseout="this.style.background='rgba(201,162,39,0.1)'">
+      <span>📅 Horaire Automne 2026</span>
+      <span style="font-size:0.75rem;font-weight:400;color:var(--muted)">⚠️ En construction — peut changer d'ici septembre</span>
+    </a>
+  </div>
+
+  <!-- Logos disciplines -->
+  <div style="display:flex;gap:24px;justify-content:center;align-items:flex-start;width:100%;max-width:520px;margin-bottom:28px;flex-wrap:wrap">
+    <div style="text-align:center">
+      <div style="width:80px;height:80px;border-radius:50%;background:var(--bg-card);border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center">
+        <img src="logos/superkids.png" alt="SuperKids" style="width:100%;height:100%;object-fit:cover" />
+      </div>
+      <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;font-weight:600">SuperKids</div>
+    </div>
+    <div style="text-align:center">
+      <div style="width:80px;height:80px;border-radius:50%;background:var(--bg-card);border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center">
+        <img src="logos/muaythai.jpg" alt="Muay Thai" style="width:100%;height:100%;object-fit:cover" />
+      </div>
+      <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;font-weight:600">Muay Thai</div>
+    </div>
+    <div style="text-align:center">
+      <div style="width:80px;height:80px;border-radius:50%;background:var(--bg-card);border:1px solid var(--border);overflow:hidden;display:flex;align-items:center;justify-content:center">
+        <img src="logos/jiujitsu.png" alt="Jiu-Jitsu" style="width:100%;height:100%;object-fit:cover" />
+      </div>
+      <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;font-weight:600">Jiu-Jitsu</div>
+    </div>
+    <div style="text-align:center">
+      <div style="width:80px;height:80px;border-radius:50%;background:#1a0a14;border:1px solid rgba(249,168,212,0.35);overflow:hidden;display:flex;align-items:center;justify-content:center">
+        <img src="logos/gracie.jpg" alt="Autodéfense Femme" style="width:100%;height:100%;object-fit:cover;filter:sepia(0.4) saturate(2) hue-rotate(280deg) brightness(1.1)" />
+      </div>
+      <div style="font-size:0.7rem;color:#f9a8d4;margin-top:8px;font-weight:600;line-height:1.4">Autodéfense<br>Femme</div>
+    </div>
+  </div>
+
   <!-- Formulaire -->
   <div class="card" id="form-card">
     <p class="card-title">Je veux être informé(e) en priorité pour septembre</p>
@@ -314,14 +391,12 @@
       <input type="text" name="bot-field" style="display:none;position:absolute;left:-9999px" tabindex="-1" autocomplete="off" />
 
       <div class="field">
-        <label for="nom">Prénom et nom</label>
-        <input id="nom" name="nom" type="text" placeholder="Ex : Marie Tremblay" required />
-      </div>
-
-      <!-- Infos parent -->
-      <div class="field">
         <label for="nom_parent">Votre nom (parent / adulte)</label>
-        <input id="nom_parent" name="nom_parent" type="text" placeholder="Ex : Marie Tremblay" required />
+        <input id="nom_parent" name="nom_parent" type="text" placeholder="Ex : Marie Tremblay" required oninput="syncNomParticipant()" />
+        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:0.82rem;text-transform:none;letter-spacing:0;color:var(--muted);cursor:pointer;font-weight:500">
+          <input type="checkbox" id="meme-nom" onchange="toggleMemeNom(this)" style="width:auto;accent-color:var(--gold);cursor:pointer" />
+          Je m'inscris moi-même (même nom que le participant)
+        </label>
       </div>
 
       <div class="field">
@@ -332,7 +407,7 @@
       <div class="field row">
         <div>
           <label for="telephone">Téléphone <span class="opt">(facultatif)</span></label>
-          <input id="telephone" name="telephone" type="tel" placeholder="819 000-0000" />
+          <input id="telephone" name="telephone" type="tel" placeholder="819 000-0000" oninput="formatTel(this)" />
         </div>
         <div>
           <label for="est_membre">Statut</label>
@@ -346,7 +421,10 @@
       </div>
 
       <!-- Enfants -->
-      <div class="section-label">Participant(s)</div>
+      <div class="section-label" style="display:flex;justify-content:space-between;align-items:center">
+        <span>Participant(s)</span>
+        <span id="participant-count" style="font-size:0.8rem;font-weight:600;color:var(--gold);letter-spacing:0">👤 1 participant</span>
+      </div>
       <div id="enfants-list">
         <div class="enfant-bloc">
           <div class="field">
@@ -360,7 +438,7 @@
             </div>
             <div>
               <label>Cours souhaité</label>
-              <select name="enfant_discipline[]" required>
+              <select name="enfant_discipline[]" required onchange="afficherSpots(this)">
                 <option value="" disabled selected>Choisir…</option>
                 <optgroup label="SuperKids">
                   <option>SuperKids — Parents-enfants (3-7 ans)</option>
@@ -378,10 +456,27 @@
               </select>
             </div>
           </div>
+          <div class="cours-supplementaires"></div>
+          <button type="button" class="btn-add-cours" onclick="ajouterCours(this)" style="background:transparent;border:none;color:var(--gold);font-family:inherit;font-size:0.8rem;font-weight:600;cursor:pointer;padding:4px 0;margin-bottom:4px">+ Ajouter un 2e cours pour ce participant</button>
         </div>
       </div>
 
       <button type="button" class="btn-add" onclick="ajouterEnfant()">+ Ajouter un participant</button>
+
+      <div class="field">
+        <label for="note">Une question sur les cours offerts ? <span class="opt">(facultatif)</span></label>
+        <textarea id="note" name="note" rows="3" placeholder="Ex : Quel cours pour mon enfant de 8 ans ? Différence entre Jiu-Jitsu et Muay Thai ? Horaires du soir disponibles ?…" style="resize:vertical;min-height:80px"></textarea>
+        <p style="margin-top:8px;font-size:0.8rem;color:#6b7280;line-height:1.6">
+          Cours offerts : SuperKids (3-7 ans) · Jiu-Jitsu/Autodéfense enfants, ados, adultes · Autodéfense Femme (12 ans+) · Muay Thai enfants et adultes.<br>
+          Rejoins notre groupe public :
+          <a href="https://www.facebook.com/groups/academiedartsmartiauxrouynnoranda" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:5px;vertical-align:middle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+            Académie d'arts martiaux — Rouyn-Noranda
+          </a>
+        </p>
+      </div>
+
+      <div id="compteur-social" style="display:none;text-align:center;margin-bottom:12px;font-size:0.85rem;color:var(--gold);font-weight:600"></div>
 
       <button type="submit" class="btn">Je veux ma place pour septembre →</button>
 
@@ -390,26 +485,120 @@
         Les personnes sur cette liste ont priorité sur les nouvelles inscriptions.
       </p>
     </form>
+
+    <!-- Résumé avant envoi -->
+    <div id="recap" style="display:none">
+      <div class="recap-box">
+        <p class="recap-titre">Vérifiez avant d'envoyer</p>
+        <div id="recap-content"></div>
+      </div>
+      <button class="btn" onclick="confirmerEnvoi()" id="btn-confirmer">Confirmer et envoyer →</button>
+      <button class="btn-modifier" onclick="annulerRecap()">← Modifier</button>
+    </div>
   </div>
 
   <!-- Confirmation (affiché après soumission JS) -->
   <div class="merci" id="merci">
     <div class="check">✅</div>
     <h2>C'est noté !</h2>
-    <p>
-      On vous contacte en <strong>juillet</strong> avec les détails sur les horaires,
-      les tarifs et les nouveaux locaux.<br /><br />
-      Vous avez la priorité sur les nouvelles inscriptions.
-    </p>
+    <p>On vous contacte en <strong>juillet</strong> avec les détails sur les horaires, les tarifs et les nouveaux locaux.</p>
+    <div id="merci-participants" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin:20px 0;text-align:left;font-size:0.9rem;color:var(--muted);line-height:1.8"></div>
+    <p style="margin-bottom:20px">Vous avez la priorité sur les nouvelles inscriptions.</p>
+    <a href="https://www.facebook.com/groups/academiedartsmartiauxrouynnoranda" target="_blank" rel="noopener"
+       style="display:inline-flex;align-items:center;gap:8px;background:#1877F2;color:#fff;font-weight:700;font-size:0.9rem;padding:12px 20px;border-radius:8px;text-decoration:none;margin-bottom:12px">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.268h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+      Rejoindre le groupe Facebook
+    </a><br>
+    <button onclick="partager()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:0.85rem;font-weight:600;padding:10px 20px;border-radius:8px;cursor:pointer;transition:border-color 0.2s"
+            onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'"
+            onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+      🔗 Partager la page avec un ami
+    </button>
   </div>
 
   <footer>
-    <a href="/automne-2026">← Horaire Automne 2026</a><br /><br />
     Académie d'arts martiaux familial · Rouyn-Noranda
   </footer>
 
   <script>
     const API_URL = 'https://leads.srv1302277.hstgr.cloud/submit';
+    let _payload = null;
+
+    // ── Mapping cours → catégorie spots ──
+    const COURS_CATEGORIE = {
+      'SuperKids — Parents-enfants (3-7 ans)':       'superkids',
+      'Jiu-Jitsu — Enfants (7-10 ans)':             'jj_enfant',
+      'Jiu-Jitsu — Ados/Pré-ados (10 ans et +)':   'jj_ados',
+      'Jiu-Jitsu / Autodéfense — Adultes':          'jj_adulte',
+      'Autodéfense Femme (12 ans et +)':            'autodef_femme',
+      'Muay Thai — Enfants (7 ans et +)':           'muaythai_enfant',
+      'Muay Thai — Adultes':                        'muaythai_adulte',
+    };
+    let _spots = {};
+
+    fetch('https://leads.srv1302277.hstgr.cloud/spots')
+      .then(r => r.json())
+      .then(d => { _spots = d; })
+      .catch(() => {});
+
+    function afficherSpots(select) {
+      const conteneur = select.closest('.enfant-bloc') || select.closest('.field.row') || select.parentElement;
+      let badge = conteneur.querySelector('.spots-badge');
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'spots-badge';
+        badge.style.cssText = 'margin-top:6px;font-size:0.78rem;font-weight:600;padding:4px 10px;border-radius:6px;display:inline-block';
+        select.parentElement.appendChild(badge);
+      }
+      const cat = COURS_CATEGORIE[select.value];
+      if (!cat || !_spots[cat]) { badge.style.display = 'none'; return; }
+      const rem = _spots[cat].remaining;
+      if (rem > 10) {
+        badge.style.display = 'inline-block';
+        badge.style.background = 'rgba(34,197,94,0.12)';
+        badge.style.color = '#4ade80';
+        badge.textContent = '✅ ' + rem + ' places disponibles';
+      } else if (rem > 0) {
+        badge.style.display = 'inline-block';
+        badge.style.background = 'rgba(234,179,8,0.12)';
+        badge.style.color = '#fbbf24';
+        badge.textContent = '⚠️ Presque complet — ' + rem + ' places restantes';
+      } else {
+        badge.style.display = 'inline-block';
+        badge.style.background = 'rgba(239,68,68,0.12)';
+        badge.style.color = '#f87171';
+        badge.textContent = '🔴 Complet — contactez-nous';
+      }
+    }
+
+    // ── Compteur social ──
+    fetch('https://leads.srv1302277.hstgr.cloud/count')
+      .then(r => r.json())
+      .then(d => {
+        if (d.count >= 2) {
+          const el = document.getElementById('compteur-social');
+          el.textContent = '🔥 ' + d.count + ' famille' + (d.count > 1 ? 's' : '') + ' déjà inscrite' + (d.count > 1 ? 's' : '') + ' — il reste des places !';
+          el.style.display = 'block';
+        }
+      }).catch(() => {});
+
+    // ── Format téléphone ──
+    function formatTel(input) {
+      const digits = input.value.replace(/\D/g, '').slice(0, 10);
+      if (digits.length <= 3) input.value = digits;
+      else if (digits.length <= 6) input.value = digits.slice(0,3) + ' ' + digits.slice(3);
+      else input.value = digits.slice(0,3) + ' ' + digits.slice(3,6) + '-' + digits.slice(6);
+    }
+
+    // ── Partager ──
+    function partager() {
+      const url = 'https://horaire-academie-amf.netlify.app/liste-attente';
+      if (navigator.share) {
+        navigator.share({ title: 'Liste d\'attente — Académie d\'arts martiaux', url });
+      } else {
+        navigator.clipboard.writeText(url).then(() => alert('Lien copié ! Colle-le où tu veux.'));
+      }
+    }
 
     const TEMPLATE_COURS = `
       <optgroup label="SuperKids">
@@ -426,12 +615,54 @@
         <option>Muay Thai — Adultes</option>
       </optgroup>`;
 
+    function premierNomField() {
+      return document.querySelector('#enfants-list .enfant-bloc input[name="enfant_nom[]"]');
+    }
+
+    function syncNomParticipant() {
+      if (document.getElementById('meme-nom').checked) {
+        premierNomField().value = document.getElementById('nom_parent').value;
+      }
+    }
+
+    function toggleMemeNom(cb) {
+      const champ = premierNomField();
+      if (cb.checked) {
+        champ.value = document.getElementById('nom_parent').value;
+        champ.disabled = true;
+        champ.style.opacity = '0.5';
+      } else {
+        champ.disabled = false;
+        champ.style.opacity = '1';
+      }
+    }
+
+    function updateCount() {
+      const n = document.querySelectorAll('#enfants-list .enfant-bloc').length;
+      document.getElementById('participant-count').textContent =
+        '👤 ' + n + ' participant' + (n > 1 ? 's' : '');
+    }
+
+    function ajouterCours(btn) {
+      const conteneur = btn.previousElementSibling;
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:8px';
+      div.innerHTML = `
+        <select name="enfant_discipline_extra[]" onchange="afficherSpots(this)" style="flex:1;background:var(--bg-input);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);font-family:inherit;font-size:1rem;padding:12px 16px;appearance:none;outline:none">
+          <option value="">— 2e cours (facultatif) —</option>
+          ${TEMPLATE_COURS}
+        </select>
+        <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#6b7280;font-size:1.1rem;cursor:pointer;padding:0;flex-shrink:0" title="Retirer">✕</button>`;
+      conteneur.appendChild(div);
+      btn.style.display = 'none';
+    }
+
     function ajouterEnfant() {
       const liste = document.getElementById('enfants-list');
       const bloc = document.createElement('div');
       bloc.className = 'enfant-bloc';
       bloc.innerHTML = `
-        <button type="button" class="suppr" onclick="this.parentElement.remove()" title="Retirer">✕</button>
+        <button type="button" class="suppr" onclick="this.parentElement.remove();updateCount()" title="Retirer">✕</button>
         <div class="field">
           <label>Nom du participant</label>
           <input type="text" name="enfant_nom[]" placeholder="Prénom" required />
@@ -443,48 +674,88 @@
           </div>
           <div>
             <label>Cours souhaité</label>
-            <select name="enfant_discipline[]" required>
+            <select name="enfant_discipline[]" required onchange="afficherSpots(this)">
               <option value="" disabled selected>Choisir…</option>
               ${TEMPLATE_COURS}
             </select>
           </div>
-        </div>`;
+        </div>
+        <div class="cours-supplementaires"></div>
+        <button type="button" onclick="ajouterCours(this)" style="background:transparent;border:none;color:var(--gold);font-family:inherit;font-size:0.8rem;font-weight:600;cursor:pointer;padding:4px 0;margin-bottom:4px">+ Ajouter un 2e cours pour ce participant</button>`;
       liste.appendChild(bloc);
+      updateCount();
     }
 
-    async function handleSubmit(e) {
+    function handleSubmit(e) {
       e.preventDefault();
       const form = e.target;
       if (form.querySelector('[name="bot-field"]').value) return;
 
-      const btn = form.querySelector('.btn');
-      btn.textContent = 'Envoi en cours…';
-      btn.disabled = true;
+      const nomParent = form.querySelector('#nom_parent').value.trim();
+      const courriel  = form.querySelector('#courriel').value.trim();
+      const enfants   = [];
 
-      const noms       = [...form.querySelectorAll('[name="enfant_nom[]"]')].map(i => i.value.trim());
-      const ages       = [...form.querySelectorAll('[name="enfant_age[]"]')].map(i => parseInt(i.value) || null);
-      const disciplines = [...form.querySelectorAll('[name="enfant_discipline[]"]')].map(i => i.value);
+      document.querySelectorAll('#enfants-list .enfant-bloc').forEach(bloc => {
+        const nom = bloc.querySelector('[name="enfant_nom[]"]').value.trim();
+        const age = parseInt(bloc.querySelector('[name="enfant_age[]"]').value) || null;
+        const disc1 = bloc.querySelector('[name="enfant_discipline[]"]').value;
+        if (disc1) enfants.push({ nom, age, discipline: disc1 });
+        bloc.querySelectorAll('[name="enfant_discipline_extra[]"]').forEach(sel => {
+          if (sel.value) enfants.push({ nom, age, discipline: sel.value });
+        });
+      });
 
-      const payload = {
-        nom_parent: form.querySelector('#nom_parent').value.trim(),
-        courriel:   form.querySelector('#courriel').value.trim(),
+      _payload = {
+        nom_parent: nomParent,
+        courriel:   courriel,
         telephone:  form.querySelector('#telephone').value.trim() || null,
         est_membre: form.querySelector('#est_membre').value,
-        enfants:    noms.map((n, i) => ({ nom: n, age: ages[i], discipline: disciplines[i] }))
+        note:       form.querySelector('#note').value.trim() || null,
+        enfants
       };
+
+      // Construire le résumé
+      const lignes = _payload.enfants.map(p =>
+        `<div class="recap-ligne"><strong>${p.nom}</strong>, ${p.age} ans — ${p.discipline}</div>`
+      ).join('');
+
+      document.getElementById('recap-content').innerHTML = `
+        <div class="recap-ligne">Parent : <strong>${nomParent}</strong></div>
+        <div class="recap-ligne">Courriel : <strong>${courriel}</strong></div>
+        ${lignes}
+        ${_payload.note ? `<div class="recap-ligne">Note : <em>${_payload.note}</em></div>` : ''}
+      `;
+
+      form.style.display = 'none';
+      document.getElementById('recap').style.display = 'block';
+    }
+
+    function annulerRecap() {
+      document.getElementById('recap').style.display = 'none';
+      document.querySelector('form').style.display = 'block';
+    }
+
+    async function confirmerEnvoi() {
+      const btn = document.getElementById('btn-confirmer');
+      btn.textContent = 'Envoi en cours…';
+      btn.disabled = true;
 
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(_payload)
         });
         if (!res.ok) throw new Error(await res.text());
+        const lignesMerci = _payload.enfants.map(p =>
+          `<div>✅ <strong>${p.nom}</strong> — ${p.discipline}</div>`
+        ).join('');
+        document.getElementById('merci-participants').innerHTML = lignesMerci;
         document.getElementById('hero').style.display = 'none';
         document.getElementById('form-card').style.display = 'none';
         document.getElementById('merci').style.display = 'block';
       } catch (err) {
-        btn.textContent = 'Je veux ma place pour septembre →';
+        btn.textContent = 'Confirmer et envoyer →';
         btn.disabled = false;
         alert('Une erreur est survenue. Réessaie ou contacte-nous directement.');
         console.error(err);
