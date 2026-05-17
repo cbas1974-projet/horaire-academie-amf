@@ -322,11 +322,10 @@
     _rawAnnouncements = announcements;
     _rawRanges        = ranges;
 
-    // Default: session englobant aujourd'hui → sinon la plus récente (dernière)
-    const today = new Date().toISOString().slice(0, 10);
-    let bestIdx = sessions.findIndex(s => s.start_date <= today && s.end_date >= today);
-    if (bestIdx < 0) bestIdx = sessions.length - 1;
-    _publicSessIdx = bestIdx;
+    // Default: is_current session, ou dernière si ?saison=automne dans l'URL
+    const forceLatest = new URLSearchParams(window.location.search).get('saison') === 'automne';
+    const currentIdx = sessions.findIndex(s => s.is_current);
+    _publicSessIdx = forceLatest ? sessions.length - 1 : (currentIdx >= 0 ? currentIdx : 0);
 
     return buildAppDataForSession(
       sessions[_publicSessIdx], courses, holidays, events, announcements, ranges
