@@ -751,6 +751,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(_payload)
         });
+        if (res.status === 429) throw new Error('RATE_LIMIT');
         if (!res.ok) throw new Error(await res.text());
         const lignesMerci = _payload.enfants.map(p =>
           `<div>✅ <strong>${p.nom}</strong> — ${p.discipline}</div>`
@@ -762,7 +763,11 @@
       } catch (err) {
         btn.textContent = 'Confirmer et envoyer →';
         btn.disabled = false;
-        alert('Une erreur est survenue. Réessaie ou contacte-nous directement.');
+        if (err.message === 'RATE_LIMIT') {
+          alert('Vous avez déjà soumis plusieurs fois récemment. Attendez une heure et réessayez, ou contactez-nous directement.');
+        } else {
+          alert('Une erreur est survenue. Réessaie ou contacte-nous directement.');
+        }
         console.error(err);
       }
     }
