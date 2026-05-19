@@ -9,6 +9,137 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ══════════════════════════════
+       IMPRESSION — version papier
+       ══════════════════════════════ */
+    #print-form { display: none; }
+
+    @media print {
+      @page { size: letter portrait; margin: 12mm 14mm; }
+
+      body > *:not(#print-form) { display: none !important; }
+      body { background: #fff; padding: 0; }
+
+      #print-form {
+        display: block;
+        font-family: 'Inter', sans-serif;
+        font-size: 11pt;
+        color: #000;
+        width: 100%;
+      }
+
+      .pf-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 2.5pt solid #000;
+        padding-bottom: 8pt;
+        margin-bottom: 10pt;
+      }
+      .pf-header-left h1 {
+        font-size: 15pt;
+        font-weight: 800;
+        line-height: 1.2;
+      }
+      .pf-header-left p {
+        font-size: 9.5pt;
+        color: #444;
+        margin-top: 3pt;
+      }
+      .pf-qr img { width: 80pt; height: 80pt; }
+
+      .pf-section-title {
+        font-size: 8.5pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        border-bottom: 1pt solid #000;
+        padding-bottom: 3pt;
+        margin: 10pt 0 6pt;
+      }
+
+      .pf-row {
+        display: flex;
+        gap: 16pt;
+        margin-bottom: 8pt;
+      }
+      .pf-field {
+        flex: 1;
+      }
+      .pf-field label {
+        font-size: 8pt;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 3pt;
+      }
+      .pf-field .pf-line {
+        border-bottom: 1pt solid #666;
+        height: 16pt;
+        width: 100%;
+      }
+
+      .pf-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 8pt;
+        font-size: 9pt;
+      }
+      .pf-table th {
+        background: #000;
+        color: #fff;
+        font-weight: 700;
+        padding: 4pt 5pt;
+        text-align: left;
+        font-size: 8pt;
+      }
+      .pf-table td {
+        border: 0.5pt solid #ccc;
+        height: 20pt;
+        padding: 2pt 5pt;
+      }
+      .pf-table tr:nth-child(even) td { background: #f7f7f7; }
+
+      .pf-totaux {
+        display: flex;
+        gap: 12pt;
+        margin-top: 6pt;
+      }
+      .pf-totaux .pf-field { flex: none; width: 130pt; }
+
+      .pf-paiement {
+        border: 1.5pt solid #000;
+        border-radius: 4pt;
+        padding: 7pt 10pt;
+        margin-top: 10pt;
+        font-size: 9.5pt;
+      }
+      .pf-paiement strong { font-size: 10pt; }
+      .pf-paiement .pf-prix {
+        display: flex;
+        gap: 20pt;
+        margin-top: 5pt;
+        font-size: 9pt;
+      }
+
+      .pf-note-box {
+        border: 0.5pt solid #aaa;
+        height: 36pt;
+        margin-top: 6pt;
+        padding: 4pt;
+        font-size: 8pt;
+        color: #888;
+      }
+
+      .pf-footer {
+        text-align: center;
+        font-size: 8pt;
+        color: #666;
+        margin-top: 10pt;
+        border-top: 0.5pt solid #ccc;
+        padding-top: 5pt;
+      }
+    }
+
     :root {
       --bg:        #0f0f1a;
       --bg-card:   #16213e;
@@ -985,6 +1116,75 @@
     })();
   </script>
 
+  <!-- ═══════════ VERSION PAPIER (impression seulement) ═══════════ -->
+  <div id="print-form">
+    <div class="pf-header">
+      <div class="pf-header-left">
+        <h1>Académie en Action — Édition 03<br>Jeux martiaux</h1>
+        <p>14 juin 2026 · Feuille d'inscription — une feuille par famille</p>
+        <p style="margin-top:6pt;font-size:9pt">Académie de Rouyn-Noranda &amp; Institut de Val-d'Or</p>
+      </div>
+      <div class="pf-qr">
+        <div id="qrcode-print"></div>
+        <p style="font-size:7pt;text-align:center;margin-top:3pt;color:#444">Inscription en ligne</p>
+      </div>
+    </div>
+
+    <div class="pf-section-title">Informations du parent / tuteur</div>
+    <div class="pf-row">
+      <div class="pf-field"><label>Nom complet</label><div class="pf-line"></div></div>
+      <div class="pf-field"><label>Courriel</label><div class="pf-line"></div></div>
+      <div class="pf-field" style="max-width:120pt"><label>Téléphone</label><div class="pf-line"></div></div>
+    </div>
+
+    <div class="pf-section-title">Compétiteurs</div>
+    <table class="pf-table">
+      <thead>
+        <tr>
+          <th style="width:22%">Prénom</th>
+          <th style="width:20%">Nom</th>
+          <th style="width:8%">Âge</th>
+          <th style="width:11%">Poids (lbs)</th>
+          <th style="width:16%">École</th>
+          <th style="width:23%">Programme</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+
+    <div class="pf-totaux">
+      <div class="pf-field"><label>Nb de repas famille (5 $/repas)</label><div class="pf-line"></div></div>
+      <div class="pf-field"><label>Total à payer</label><div class="pf-line"></div></div>
+    </div>
+
+    <div class="pf-section-title" style="margin-top:8pt">Note</div>
+    <div class="pf-note-box">Allergie, besoin particulier, message…</div>
+
+    <div class="pf-paiement">
+      <strong>Paiement — le plus tôt possible, en liquide 💵</strong>
+      <div class="pf-prix">
+        <span>🔴 Académie de Rouyn-Noranda → <strong>Karine</strong> (pendant les heures de cours)</span>
+        <span>🔴 Institut de Val-d'Or → <strong>Sensei Ralph</strong></span>
+      </div>
+      <div style="margin-top:5pt;font-size:8.5pt">
+        SuperKids &amp; Petits Samouraïs (6 ans et moins) : <strong>40 $</strong> &nbsp;|&nbsp;
+        Groupe régulier (6 ans et plus) : <strong>60 $</strong> &nbsp;|&nbsp;
+        Pizza <strong>GRATUITE</strong> pour les compétiteurs · Repas famille : <strong>5 $/pers.</strong><br>
+        🍕 Pas payé d'avance = pas de pizza le jour J
+      </div>
+    </div>
+
+    <div class="pf-footer">
+      Académie en Action Édition 03 · 14 juin 2026 · horaire-academie-amf.netlify.app/competition.html
+    </div>
+  </div>
+  <!-- ═══════════════════════════════════════════════════════════ -->
+
   <div style="text-align:center;margin-top:48px;padding-bottom:8px">
     <p style="font-size:0.75rem;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em">Scanner pour ouvrir la page</p>
     <div id="qrcode" style="display:inline-block;background:#fff;padding:12px;border-radius:10px"></div>
@@ -992,12 +1192,15 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
+    var QR_URL = 'https://horaire-academie-amf.netlify.app/competition.html';
     new QRCode(document.getElementById('qrcode'), {
-      text: 'https://horaire-academie-amf.netlify.app/competition.html',
-      width: 180,
-      height: 180,
-      colorDark: '#0f0f1a',
-      colorLight: '#ffffff',
+      text: QR_URL, width: 180, height: 180,
+      colorDark: '#0f0f1a', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+    new QRCode(document.getElementById('qrcode-print'), {
+      text: QR_URL, width: 80, height: 80,
+      colorDark: '#000000', colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.M
     });
   </script>
