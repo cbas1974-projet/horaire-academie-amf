@@ -307,6 +307,8 @@
     }
     .btn:hover { background: var(--gold-light); }
     .btn:active { transform: scale(0.98); }
+    #btn-confirmer { background: #dc2626; color: #fff; }
+    #btn-confirmer:hover { background: #ef4444; }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
     /* ── Récap ── */
@@ -406,6 +408,10 @@
   <div class="hero" id="hero">
     <h1>Inscris ton enfant aux<br><span>Jeux martiaux !</span></h1>
     <p>Un échange amical pour se dépasser.<br>Académie de Rouyn-Noranda · Institut de Val-d'Or</p>
+  </div>
+
+  <div id="inscrits-count" style="text-align:center;margin-bottom:20px;font-size:0.85rem;color:var(--muted)">
+    ⚔️ <span id="inscrits-num">…</span> compétiteur<span id="inscrits-s"></span> inscrit<span id="inscrits-s2"></span>
   </div>
 
   <!-- Tarification (hors de la card, comme liste-attente) -->
@@ -555,6 +561,17 @@
 
       const API_URL = 'https://leads.srv1302277.hstgr.cloud/competition/submit';
 
+      // ── Compteur public ──
+      fetch('https://leads.srv1302277.hstgr.cloud/competition/count')
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          var n = d.count || 0;
+          document.getElementById('inscrits-num').textContent = n;
+          document.getElementById('inscrits-s').textContent  = n > 1 ? 's' : '';
+          document.getElementById('inscrits-s2').textContent = n > 1 ? 's' : '';
+        })
+        .catch(function(){ document.getElementById('inscrits-count').style.display='none'; });
+
       // ── Refs ──
       const form            = document.getElementById('reg-form');
       const globalErr       = document.getElementById('global-error');
@@ -673,9 +690,9 @@
               <div class="field-error"></div>
             </div>
             <div data-field="weight">
-              <label>Poids <span class="opt">(kg)</span></label>
-              <input type="number" name="p_weight[]" min="0" max="300" step="0.5"
-                     inputmode="decimal" placeholder="kg" />
+              <label>Poids <span class="opt">(lbs)</span></label>
+              <input type="number" name="p_weight[]" min="0" max="660" step="0.5"
+                     inputmode="decimal" placeholder="lbs" />
               <div class="field-error"></div>
             </div>
           </div>
@@ -829,7 +846,7 @@
           if (wtRaw !== '') {
             const w = parseFloat(wtRaw);
             if (isNaN(w) || w <= 0 || w > 300) {
-              setErr(bloc, 'weight', 'Poids invalide (0–300 kg).');
+              setErr(bloc, 'weight', 'Poids invalide (0–660 lbs).');
               valid = false;
             }
           }
@@ -872,7 +889,7 @@
           totalComp += p.frais;
           const details = [
             p.age + ' ans',
-            p.weight ? p.weight + ' kg' : null,
+            p.weight ? p.weight + ' lbs' : null,
             schoolLabel(p.school),
             progLabel(p.programme) + ' — ' + p.frais + ' $',
           ].filter(Boolean).join(' · ');
@@ -924,7 +941,7 @@
             return '✅ <strong>' + escHtml(p.first_name + ' ' + p.last_name) + '</strong>' +
                    ' — ' + escHtml(progLbl(p.programme)) + ' (' + p.frais + ' $)' +
                    (p.age ? ', ' + p.age + ' ans' : '') +
-                   (p.weight ? ', ' + p.weight + ' kg' : '') +
+                   (p.weight ? ', ' + p.weight + ' lbs' : '') +
                    ' · ' + escHtml(schLbl(p.school));
           }).join('<br>') +
           (_payload.family_meals > 0
