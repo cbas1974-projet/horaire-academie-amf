@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inscription — Académie en Action Édition 03 · 14 juin 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f1a;
+      --bg-card:   #16213e;
+      --bg-input:  #1a1a2e;
+      --gold:      #c9a227;
+      --gold-light:#e6c84e;
+      --border:    rgba(201, 162, 39, 0.25);
+      --text:      #f0f0f0;
+      --muted:     #a0aec0;
+      --radius:    12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .logo-wrap { margin-bottom: 32px; text-align: center; }
+    .logo-wrap img { height: 92px; width: auto; }
+
+    .badge {
+      display: inline-block;
+      background: rgba(201,162,39,0.15);
+      border: 1px solid var(--gold);
+      color: var(--gold-light);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 999px;
+      margin-bottom: 20px;
+    }
+
+    .hero {
+      text-align: center;
+      max-width: 560px;
+      margin-bottom: 32px;
+    }
+    .hero h1 {
+      font-size: clamp(1.25rem, 4vw, 1.7rem);
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 16px;
+    }
+    .hero h1 span { color: var(--gold); }
+    .hero p { color: var(--muted); font-size: 1rem; line-height: 1.65; }
+
+    /* ── Tarification ── */
+    .tarif-block {
+      background: rgba(201,162,39,0.08);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin-bottom: 28px;
+      width: 100%;
+      max-width: 520px;
+    }
+    .tarif-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gold);
+      margin-bottom: 12px;
+    }
+    .tarif-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .tarif-line:last-child { border-bottom: none; }
+    .tarif-line .prix { font-weight: 700; color: var(--gold); white-space: nowrap; margin-left: 12px; }
+    .tarif-line.warn { color: #fbbf24; }
+    .tarif-note { margin-top: 10px; font-size: 0.78rem; color: var(--muted); text-align: center; font-style: italic; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gold);
+      margin: 4px 0 16px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .section-label:first-child { border-top: none; padding-top: 0; }
+    .participant-count {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gold);
+      letter-spacing: 0;
+    }
+
+    /* ── Participant bloc ── */
+    .participant-bloc {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px;
+      padding: 18px 16px;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .participant-bloc .bloc-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .btn-suppr {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: none;
+      border: none;
+      color: #6b7280;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+    .btn-suppr:hover { color: #ef4444; }
+
+    /* ── Champs ── */
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    .field.row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 7px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    label .opt {
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 0.78rem;
+      color: #6b7280;
+    }
+    input, select, textarea {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 11px 14px;
+      transition: border-color 0.2s;
+      outline: none;
+      appearance: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--gold); }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0aec0' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 38px;
+      cursor: pointer;
+    }
+    select option { background: var(--bg-input); }
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* ── Bouton Ajouter ── */
+    .btn-add {
+      width: 100%;
+      background: transparent;
+      border: 1px dashed var(--gold);
+      color: var(--gold);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      margin-bottom: 4px;
+      transition: background 0.2s;
+    }
+    .btn-add:hover { background: rgba(201,162,39,0.08); }
+
+    /* ── Repas famille ── */
+    .meal-wrap { display: flex; align-items: center; gap: 8px; }
+    .meal-btn {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(201,162,39,0.12);
+      color: var(--gold);
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .meal-btn:hover { background: rgba(201,162,39,0.25); }
+    .meal-count {
+      width: 60px;
+      text-align: center;
+      background: var(--bg-input);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 1rem;
+      padding: 8px;
+      -moz-appearance: textfield;
+    }
+    .meal-count::-webkit-outer-spin-button,
+    .meal-count::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .meal-total { font-weight: 700; color: var(--gold); font-size: 0.9rem; min-width: 50px; }
+
+    /* ── Total dynamique ── */
+    .total-bar {
+      background: rgba(201,162,39,0.08);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .total-bar .total-val { font-weight: 700; color: var(--gold-light); font-size: 1rem; }
+
+    /* ── Validation ── */
+    .field-error {
+      font-size: 0.78rem;
+      color: #f87171;
+      display: none;
+      margin-top: 4px;
+    }
+    .has-error .field-error { display: block; }
+    .has-error input, .has-error select { border-color: #f87171 !important; }
+    .global-error {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.4);
+      color: #f87171;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    /* ── Boutons ── */
+    .btn {
+      width: 100%;
+      background: var(--gold);
+      color: #0f0f1a;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      padding: 16px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn:hover { background: var(--gold-light); }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* ── Récap ── */
+    .recap-card {
+      background: rgba(201,162,39,0.08);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    .recap-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gold);
+      margin-bottom: 14px;
+    }
+    .recap-line {
+      font-size: 0.9rem;
+      color: var(--muted);
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .recap-line:last-child { border-bottom: none; }
+    .recap-line strong { color: var(--text); }
+    .btn-modify {
+      width: 100%;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-modify:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ── Merci ── */
+    .merci {
+      display: none;
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+    }
+    .merci .check { font-size: 3.5rem; margin-bottom: 20px; }
+    .merci h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 12px; color: var(--gold); }
+    .merci p { color: var(--muted); line-height: 1.7; margin-bottom: 16px; }
+    .merci-participants {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin: 20px 0;
+      text-align: left;
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 2;
+    }
+    .btn-secondary {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--gold);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-secondary:hover { background: rgba(201,162,39,0.08); }
+
+    footer { margin-top: 48px; text-align: center; color: #4b5563; font-size: 0.8rem; }
+    .back-link { display: block; margin-top: 20px; color: var(--muted); font-size: 0.85rem; text-decoration: none; transition: color 0.2s; }
+    .back-link:hover { color: var(--gold); }
+
+    @media (max-width: 420px) {
+      .field.row { grid-template-columns: 1fr; }
+      .card { padding: 24px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo-wrap">
+    <img src="logo.png" alt="Académie d'arts martiaux familial" />
+  </div>
+
+  <div class="badge">Académie en Action · Édition 03 · 14 juin 2026</div>
+
+  <div class="hero" id="hero">
+    <h1>Inscris ton enfant aux<br><span>Jeux martiaux !</span></h1>
+    <p>Un échange amical pour se dépasser.<br>Académie de Rouyn-Noranda · Institut de Val-d'Or</p>
+  </div>
+
+  <!-- Tarification (hors de la card, comme liste-attente) -->
+  <div class="tarif-block">
+    <p class="tarif-title">Tarification</p>
+    <div class="tarif-line">
+      <span>SuperKids (6 ans et moins) &amp; Petits Samouraïs (Institut)</span>
+      <span class="prix">40 $</span>
+    </div>
+    <div class="tarif-line">
+      <span>Groupes réguliers <span style="color:var(--muted);font-size:0.85em">(6 ans et plus)</span></span>
+      <span class="prix">60 $</span>
+    </div>
+    <div class="tarif-line" style="background:rgba(34,197,94,0.08);border-radius:6px;padding:8px 10px;margin-top:4px;border-bottom:none">
+      <span style="color:#4ade80;font-weight:700;font-size:0.95rem">🍕 PIZZA GRATUITE pour chaque compétiteur</span>
+    </div>
+    <div class="tarif-line" style="margin-top:4px">
+      <span>Repas famille supplémentaire (pizza)</span>
+      <span class="prix">5 $ / pers.</span>
+    </div>
+    <div class="tarif-line" style="color:#f87171;font-weight:700;padding:8px 0">
+      <span>🍕 Pas payé d'avance = pas de pizza le jour J</span>
+    </div>
+    <p class="tarif-note" style="margin-top:10px;color:#f87171;font-style:normal;font-weight:600;font-size:0.82rem;line-height:1.8">
+      Payable en liquide<br>
+      💵 <strong>Rouyn</strong> → Karine (trésorière) pendant les heures de cours<br>
+      💵 <strong>Institut</strong> → Sensei Ralph
+    </p>
+  </div>
+
+  <!-- Carte formulaire -->
+  <div class="card" id="form-card">
+
+    <form id="reg-form" novalidate>
+      <!-- Honeypot anti-spam -->
+      <input type="text" name="bot-field" style="display:none;position:absolute;left:-9999px" tabindex="-1" autocomplete="off" />
+
+      <div class="global-error" id="global-error"></div>
+
+      <!-- ══ SECTION PARENT ══ -->
+      <div class="section-label" style="border-top:none;padding-top:0">
+        <span>Coordonnées du parent / adulte</span>
+      </div>
+
+      <div class="field" data-field="nom_parent">
+        <label for="nom_parent">Votre nom complet <span style="color:var(--gold)">*</span></label>
+        <input type="text" id="nom_parent" name="nom_parent" autocomplete="name"
+               placeholder="Ex : Marie Tremblay" required />
+        <div class="field-error"></div>
+      </div>
+
+      <div class="field" data-field="email">
+        <label for="email">Courriel <span style="color:var(--gold)">*</span></label>
+        <input type="email" id="email" name="email" autocomplete="email"
+               placeholder="votre@courriel.com" required />
+        <div class="field-error"></div>
+      </div>
+
+      <div class="field" data-field="phone">
+        <label for="phone">Téléphone <span class="opt">(facultatif)</span></label>
+        <input type="tel" id="phone" name="phone" autocomplete="tel"
+               placeholder="819 000-0000" oninput="formatTel(this)" />
+        <div class="field-error"></div>
+      </div>
+
+      <!-- ══ SECTION PARTICIPANTS ══ -->
+      <div class="section-label">
+        <span>Participant(s)</span>
+        <span class="participant-count" id="participant-count">👤 1 compétiteur</span>
+      </div>
+
+      <!-- Liste des blocs participant -->
+      <div id="participants-list">
+        <!-- Premier participant (généré par JS au load) -->
+      </div>
+
+      <button type="button" class="btn-add" onclick="ajouterParticipant()">
+        + Ajouter un compétiteur
+      </button>
+
+      <!-- Total dynamique -->
+      <div class="total-bar" id="total-bar" style="display:none">
+        <span id="total-label">1 compétiteur × 60 $</span>
+        <span class="total-val" id="total-val">60 $</span>
+      </div>
+
+      <!-- ══ REPAS FAMILLE ══ -->
+      <div class="field" style="margin-bottom:20px">
+        <label>Repas famille supplémentaires <span class="opt">(5 $ / personne, en plus des compétiteurs)</span></label>
+        <div class="meal-wrap">
+          <button type="button" class="meal-btn" id="meal-minus">−</button>
+          <input type="number" class="meal-count" id="meal-count" value="0" min="0" max="30" readonly />
+          <button type="button" class="meal-btn" id="meal-plus">+</button>
+          <span class="meal-total" id="meal-total"></span>
+        </div>
+      </div>
+
+      <!-- ══ NOTE ══ -->
+      <div class="field">
+        <label for="note">Question ou info particulière <span class="opt">(facultatif)</span></label>
+        <textarea id="note" name="note" rows="3"
+                  placeholder="Question, allergie, info particulière…"></textarea>
+      </div>
+
+      <button type="submit" class="btn" id="submit-btn">
+        Confirmer les inscriptions →
+      </button>
+    </form>
+
+    <!-- Récap avant envoi -->
+    <div id="recap" style="display:none">
+      <div class="recap-card">
+        <p class="recap-title">Vérifiez avant d'envoyer</p>
+        <div id="recap-content"></div>
+      </div>
+      <button class="btn" onclick="confirmerEnvoi()" id="btn-confirmer">
+        Confirmer et envoyer →
+      </button>
+      <button class="btn-modify" onclick="annulerRecap()">← Modifier</button>
+    </div>
+
+  </div><!-- /.card -->
+
+  <!-- Confirmation -->
+  <div class="merci" id="merci">
+    <div class="check">✅</div>
+    <h2>Inscription(s) reçue(s) !</h2>
+    <p>
+      On vous attend le <strong>14 juin 2026</strong> pour
+      <strong>Académie en Action Édition 03</strong>.<br>
+      Paiement sur place. On a hâte de vous voir !
+    </p>
+    <div class="merci-participants" id="merci-participants"></div>
+    <button class="btn-secondary" onclick="location.reload()">
+      Inscrire une autre famille
+    </button>
+  </div>
+
+  <footer>
+    Académie d'arts martiaux familial · Rouyn-Noranda
+  </footer>
+  <a class="back-link" href="index.html">← Retour au site</a>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const API_URL = 'https://leads.srv1302277.hstgr.cloud/competition/submit';
+
+      // ── Refs ──
+      const form            = document.getElementById('reg-form');
+      const globalErr       = document.getElementById('global-error');
+      const recap           = document.getElementById('recap');
+      const recapContent    = document.getElementById('recap-content');
+      const btnConfirmer    = document.getElementById('btn-confirmer');
+      const merci           = document.getElementById('merci');
+      const merciParts      = document.getElementById('merci-participants');
+      const formCard        = document.getElementById('form-card');
+      const hero            = document.getElementById('hero');
+      const participantsList = document.getElementById('participants-list');
+      const countEl         = document.getElementById('participant-count');
+      const totalLabel      = document.getElementById('total-label');
+      const totalVal        = document.getElementById('total-val');
+      const mealMinus       = document.getElementById('meal-minus');
+      const mealPlus        = document.getElementById('meal-plus');
+      const mealCount       = document.getElementById('meal-count');
+      const mealTotal       = document.getElementById('meal-total');
+
+      let _payload = null;
+
+      // ── Repas famille ──
+      function updateMeal() {
+        const n = parseInt(mealCount.value) || 0;
+        mealTotal.textContent = n > 0 ? '= ' + (n * 5) + ' $' : '';
+        updateTotal();
+      }
+      mealMinus.addEventListener('click', function () {
+        const v = parseInt(mealCount.value) || 0;
+        if (v > 0) { mealCount.value = v - 1; updateMeal(); }
+      });
+      mealPlus.addEventListener('click', function () {
+        const v = parseInt(mealCount.value) || 0;
+        if (v < 30) { mealCount.value = v + 1; updateMeal(); }
+      });
+
+      // ── Compteur + total ──
+      function updateCount() { updateTotal(); }
+
+      function updateTotal() {
+        const blocs = participantsList.querySelectorAll('.participant-bloc');
+        const n = blocs.length;
+        countEl.textContent = '👤 ' + n + ' compétiteur' + (n > 1 ? 's' : '');
+
+        let total = 0;
+        let nbSK = 0, nbReg = 0, nbVide = 0;
+        blocs.forEach(function (b) {
+          const prog = (b.querySelector('[name="p_programme[]"]') || {}).value || '';
+          if (prog === 'superkids') { total += 40; nbSK++; }
+          else if (prog === 'regulier') { total += 60; nbReg++; }
+          else { nbVide++; }
+        });
+
+        const totalBar = document.getElementById('total-bar');
+        const repas = parseInt(mealCount.value) || 0;
+        const totalRepas = repas * 5;
+        const grandTotal = total + totalRepas;
+
+        if (nbSK === 0 && nbReg === 0) {
+          totalBar.style.display = 'none';
+          return;
+        }
+        totalBar.style.display = 'flex';
+
+        const parts = [];
+        if (nbSK  > 0) parts.push(nbSK  + ' × 40 $');
+        if (nbReg > 0) parts.push(nbReg + ' × 60 $');
+        if (repas > 0) parts.push(repas + ' repas × 5 $');
+
+        totalLabel.textContent = parts.join(' + ');
+        totalVal.textContent   = grandTotal + ' $';
+      }
+      window.updateTotal = updateTotal;
+
+      // ── Créer un bloc participant ──
+      function creerBloc(index, removable) {
+        const bloc = document.createElement('div');
+        bloc.className = 'participant-bloc';
+
+        const label = document.createElement('p');
+        label.className = 'bloc-label';
+        label.textContent = 'Compétiteur ' + (index + 1);
+        bloc.appendChild(label);
+
+        if (removable) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn-suppr';
+          btn.title = 'Retirer';
+          btn.textContent = '✕';
+          btn.addEventListener('click', function () {
+            bloc.remove();
+            reindexerBlocs();
+            updateCount();
+          });
+          bloc.appendChild(btn);
+        }
+
+        bloc.innerHTML += `
+          <div class="field row" style="margin-bottom:12px">
+            <div data-field="first_name">
+              <label>Prénom <span style="color:var(--gold)">*</span></label>
+              <input type="text" name="p_first_name[]" autocomplete="given-name" required />
+              <div class="field-error"></div>
+            </div>
+            <div data-field="last_name">
+              <label>Nom <span style="color:var(--gold)">*</span></label>
+              <input type="text" name="p_last_name[]" autocomplete="family-name" required />
+              <div class="field-error"></div>
+            </div>
+          </div>
+          <div class="field row" style="margin-bottom:12px">
+            <div data-field="age">
+              <label>Âge <span style="color:var(--gold)">*</span></label>
+              <input type="number" name="p_age[]" min="5" max="99" inputmode="numeric" required />
+              <div class="field-error"></div>
+            </div>
+            <div data-field="weight">
+              <label>Poids <span class="opt">(kg)</span></label>
+              <input type="number" name="p_weight[]" min="0" max="300" step="0.5"
+                     inputmode="decimal" placeholder="kg" />
+              <div class="field-error"></div>
+            </div>
+          </div>
+          <div class="field row" style="margin-bottom:0">
+            <div data-field="programme">
+              <label>Programme <span style="color:var(--gold)">*</span></label>
+              <select name="p_programme[]" required onchange="updateTotal()">
+                <option value="" disabled selected>-- Choisir --</option>
+                <option value="superkids">SuperKids (6 ans et moins) — 40 $</option>
+                <option value="superkids">Petits Samouraïs — Institut — 40 $</option>
+                <option value="regulier">Groupe régulier (6 ans et +) — 60 $</option>
+              </select>
+              <div class="field-error"></div>
+            </div>
+            <div data-field="school">
+              <label>École <span style="color:var(--gold)">*</span></label>
+              <select name="p_school[]" required>
+                <option value="" disabled selected>-- Choisir --</option>
+                <option value="academie">Académie</option>
+                <option value="institut">Institut</option>
+              </select>
+              <div class="field-error"></div>
+            </div>
+          </div>
+        `;
+
+        return bloc;
+      }
+
+      function reindexerBlocs() {
+        participantsList.querySelectorAll('.participant-bloc .bloc-label').forEach(function (el, i) {
+          el.textContent = 'Compétiteur ' + (i + 1);
+        });
+      }
+
+      window.ajouterParticipant = function () {
+        const n = participantsList.querySelectorAll('.participant-bloc').length;
+        participantsList.appendChild(creerBloc(n, true));
+        updateCount();
+      };
+
+      // ── Init premier bloc (non removable) ──
+      participantsList.appendChild(creerBloc(0, false));
+      updateCount();
+
+      // ── Format téléphone ──
+      window.formatTel = function (input) {
+        const d = input.value.replace(/\D/g, '').slice(0, 10);
+        if (d.length <= 3) input.value = d;
+        else if (d.length <= 6) input.value = d.slice(0,3) + ' ' + d.slice(3);
+        else input.value = d.slice(0,3) + ' ' + d.slice(3,6) + '-' + d.slice(6);
+      };
+
+      // ── Validation helpers ──
+      function setErr(container, name, msg) {
+        const group = container.querySelector('[data-field="' + name + '"]');
+        if (!group) return;
+        const errEl = group.querySelector('.field-error');
+        if (msg) {
+          group.classList.add('has-error');
+          if (errEl) errEl.textContent = msg;
+        } else {
+          group.classList.remove('has-error');
+          if (errEl) errEl.textContent = '';
+        }
+      }
+
+      function clearAll() {
+        form.querySelectorAll('[data-field]').forEach(function (g) {
+          g.classList.remove('has-error');
+          const e = g.querySelector('.field-error');
+          if (e) e.textContent = '';
+        });
+        globalErr.style.display = 'none';
+        globalErr.textContent = '';
+      }
+
+      function escHtml(s) {
+        if (s == null) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      }
+
+      function isValidEmail(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      }
+
+      // ── Soumission ──
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (form.querySelector('[name="bot-field"]').value) return;
+        clearAll();
+
+        let valid = true;
+        let firstErrEl = null;
+
+        function failGlobal(field, msg) {
+          setErr(form, field, msg);
+          if (!firstErrEl) firstErrEl = form.querySelector('[data-field="' + field + '"] input') ||
+                                        form.querySelector('[data-field="' + field + '"] select');
+          valid = false;
+        }
+
+        // ── Validation parent ──
+        const nomParent = (form.querySelector('#nom_parent').value || '').trim();
+        const email     = (form.querySelector('#email').value || '').trim();
+        const phone     = (form.querySelector('#phone').value || '').trim();
+
+        if (!nomParent) failGlobal('nom_parent', 'Votre nom est requis.');
+        if (!email) {
+          failGlobal('email', 'Courriel requis.');
+        } else if (!isValidEmail(email)) {
+          failGlobal('email', 'Format de courriel invalide.');
+        }
+
+        // ── Validation participants ──
+        const blocs = participantsList.querySelectorAll('.participant-bloc');
+        const participants = [];
+
+        blocs.forEach(function (bloc, i) {
+          const fn      = (bloc.querySelector('[name="p_first_name[]"]').value || '').trim();
+          const ln      = (bloc.querySelector('[name="p_last_name[]"]').value || '').trim();
+          const ageRaw  = (bloc.querySelector('[name="p_age[]"]').value || '').trim();
+          const wtRaw   = (bloc.querySelector('[name="p_weight[]"]').value || '').trim();
+          const school  = (bloc.querySelector('[name="p_school[]"]').value || '').trim();
+          const programme = (bloc.querySelector('[name="p_programme[]"]').value || '').trim();
+
+          if (!fn)  { setErr(bloc, 'first_name', 'Prénom requis.'); valid = false; if (!firstErrEl) firstErrEl = bloc.querySelector('[name="p_first_name[]"]'); }
+          if (!ln)  { setErr(bloc, 'last_name',  'Nom requis.');    valid = false; if (!firstErrEl) firstErrEl = bloc.querySelector('[name="p_last_name[]"]'); }
+          if (!ageRaw) {
+            setErr(bloc, 'age', 'Âge requis.');
+            valid = false;
+            if (!firstErrEl) firstErrEl = bloc.querySelector('[name="p_age[]"]');
+          } else {
+            const a = parseInt(ageRaw, 10);
+            if (isNaN(a) || a < 5 || a > 99) {
+              setErr(bloc, 'age', 'Âge entre 5 et 99 ans.');
+              valid = false;
+              if (!firstErrEl) firstErrEl = bloc.querySelector('[name="p_age[]"]');
+            }
+          }
+          if (!programme) {
+            setErr(bloc, 'programme', 'Choisis un programme.');
+            valid = false;
+            if (!firstErrEl) firstErrEl = bloc.querySelector('[name="p_programme[]"]');
+          }
+          if (!school) {
+            setErr(bloc, 'school', 'Choisis une école.');
+            valid = false;
+            if (!firstErrEl) firstErrEl = bloc.querySelector('[name="p_school[]"]');
+          }
+          if (wtRaw !== '') {
+            const w = parseFloat(wtRaw);
+            if (isNaN(w) || w <= 0 || w > 300) {
+              setErr(bloc, 'weight', 'Poids invalide (0–300 kg).');
+              valid = false;
+            }
+          }
+
+          participants.push({
+            first_name:  fn,
+            last_name:   ln,
+            age:         parseInt(ageRaw, 10) || null,
+            weight:      wtRaw !== '' ? parseFloat(wtRaw) : null,
+            school:      school,
+            programme:   programme,
+            frais:       programme === 'superkids' ? 40 : 60,
+          });
+        });
+
+        if (!valid) {
+          if (firstErrEl) firstErrEl.focus();
+          return;
+        }
+
+        _payload = {
+          nom_parent:   nomParent,
+          email:        email,
+          phone:        phone || null,
+          participants: participants,
+          family_meals: parseInt(mealCount.value) || 0,
+          note:         (form.querySelector('#note').value || '').trim() || null,
+        };
+
+        // ── Construire récap ──
+        const schoolLabel = function (s) { return s === 'academie' ? 'Académie' : 'Institut'; };
+        let html = '';
+        html += '<div class="recap-line">Parent : <strong>' + escHtml(nomParent) + '</strong></div>';
+        html += '<div class="recap-line">Courriel : <strong>' + escHtml(email) + '</strong></div>';
+        if (phone) html += '<div class="recap-line">Téléphone : <strong>' + escHtml(phone) + '</strong></div>';
+
+        const progLabel = function (p) { return p === 'superkids' ? 'SuperKids' : 'Groupe régulier'; };
+        let totalComp = 0;
+        participants.forEach(function (p, i) {
+          totalComp += p.frais;
+          const details = [
+            p.age + ' ans',
+            p.weight ? p.weight + ' kg' : null,
+            schoolLabel(p.school),
+            progLabel(p.programme) + ' — ' + p.frais + ' $',
+          ].filter(Boolean).join(' · ');
+          html += '<div class="recap-line">';
+          html += 'Compétiteur ' + (i + 1) + ' : <strong>' + escHtml(p.first_name + ' ' + p.last_name) + '</strong>';
+          html += ' <span style="font-size:0.85em;color:var(--muted)">(' + escHtml(details) + ')</span>';
+          html += '</div>';
+        });
+
+        if (_payload.family_meals > 0)
+          html += '<div class="recap-line">Repas famille : <strong>' + _payload.family_meals + ' × 5 $ = ' + (_payload.family_meals * 5) + ' $</strong></div>';
+
+        const totalRepas = _payload.family_meals * 5;
+        html += '<div class="recap-line" style="padding-top:8px;margin-top:4px;border-top:1px solid rgba(201,162,39,0.25)">';
+        html += 'À payer le plus tôt possible à <strong>Karine</strong> pendant les heures de cours : <strong style="color:var(--gold-light)">' + (totalComp + totalRepas) + ' $</strong>';
+        html += '</div>';
+
+        if (_payload.note) html += '<div class="recap-line">Note : <em>' + escHtml(_payload.note) + '</em></div>';
+
+        recapContent.innerHTML = html;
+        form.style.display = 'none';
+        recap.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      window.annulerRecap = function () {
+        recap.style.display = 'none';
+        form.style.display = 'block';
+      };
+
+      window.confirmerEnvoi = async function () {
+        btnConfirmer.textContent = 'Envoi en cours…';
+        btnConfirmer.disabled = true;
+
+        try {
+          const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(_payload),
+          });
+          if (res.status === 429) throw new Error('RATE_LIMIT');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+
+          const schLbl  = function (s) { return s === 'academie' ? 'Académie' : 'Institut'; };
+          const progLbl = function (p) { return p === 'superkids' ? 'SuperKids' : 'Groupe régulier'; };
+          let totalFinal = _payload.participants.reduce(function (acc, p) { return acc + p.frais; }, 0);
+          totalFinal += _payload.family_meals * 5;
+          merciParts.innerHTML = _payload.participants.map(function (p) {
+            return '✅ <strong>' + escHtml(p.first_name + ' ' + p.last_name) + '</strong>' +
+                   ' — ' + escHtml(progLbl(p.programme)) + ' (' + p.frais + ' $)' +
+                   (p.age ? ', ' + p.age + ' ans' : '') +
+                   (p.weight ? ', ' + p.weight + ' kg' : '') +
+                   ' · ' + escHtml(schLbl(p.school));
+          }).join('<br>') +
+          (_payload.family_meals > 0
+            ? '<br><span style="color:var(--muted)">+ ' + _payload.family_meals + ' repas famille (' + (_payload.family_meals * 5) + ' $)</span>'
+            : '') +
+          '<br><br><strong style="color:var(--gold-light)">À payer le plus tôt possible à Karine (pendant les heures de cours) : ' + totalFinal + ' $</strong>';
+
+          hero.style.display = 'none';
+          formCard.style.display = 'none';
+          merci.style.display = 'block';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (err) {
+          btnConfirmer.textContent = 'Confirmer et envoyer →';
+          btnConfirmer.disabled = false;
+          if (err.message === 'RATE_LIMIT') {
+            alert('Vous avez déjà soumis plusieurs fois récemment. Attendez une heure et réessayez.');
+          } else {
+            alert('Une erreur est survenue. Réessaie ou contacte-nous directement.');
+          }
+          console.error(err);
+        }
+      };
+
+    })();
+  </script>
+
+</body>
+</html>
