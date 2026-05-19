@@ -15,128 +15,104 @@
     #print-form { display: none; }
 
     @media print {
-      @page { size: letter portrait; margin: 12mm 14mm; }
-
+      @page { size: letter portrait; margin: 10mm 12mm; }
       body > *:not(#print-form) { display: none !important; }
       body { background: #fff; padding: 0; }
 
       #print-form {
         display: block;
-        font-family: 'Inter', sans-serif;
-        font-size: 11pt;
+        font-family: 'Inter', Arial, sans-serif;
+        font-size: 9.5pt;
         color: #000;
         width: 100%;
       }
 
+      /* ── En-tête ── */
       .pf-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        border-bottom: 2.5pt solid #000;
-        padding-bottom: 8pt;
-        margin-bottom: 10pt;
+        display: table;
+        width: 100%;
+        border-bottom: 2pt solid #000;
+        padding-bottom: 7pt;
+        margin-bottom: 8pt;
       }
-      .pf-header-left h1 {
-        font-size: 15pt;
-        font-weight: 800;
-        line-height: 1.2;
-      }
-      .pf-header-left p {
-        font-size: 9.5pt;
-        color: #444;
-        margin-top: 3pt;
-      }
-      .pf-qr img { width: 80pt; height: 80pt; }
+      .pf-header-left  { display: table-cell; vertical-align: top; }
+      .pf-header-right { display: table-cell; vertical-align: top; text-align: right; width: 75pt; }
+      .pf-header-left h1 { font-size: 14pt; font-weight: 800; line-height: 1.2; }
+      .pf-header-left .pf-sub { font-size: 8.5pt; color: #444; margin-top: 3pt; }
+      .pf-header-right p { font-size: 7pt; color: #555; margin-top: 3pt; }
 
+      /* ── Titres de section ── */
       .pf-section-title {
-        font-size: 8.5pt;
+        font-size: 8pt;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.07em;
-        border-bottom: 1pt solid #000;
-        padding-bottom: 3pt;
-        margin: 10pt 0 6pt;
-      }
-
-      .pf-row {
-        display: flex;
-        gap: 16pt;
-        margin-bottom: 8pt;
-      }
-      .pf-field {
-        flex: 1;
-      }
-      .pf-field label {
-        font-size: 8pt;
-        font-weight: 600;
-        display: block;
-        margin-bottom: 3pt;
-      }
-      .pf-field .pf-line {
-        border-bottom: 1pt solid #666;
-        height: 16pt;
-        width: 100%;
-      }
-
-      .pf-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 8pt;
-        font-size: 9pt;
-      }
-      .pf-table th {
+        letter-spacing: 0.08em;
         background: #000;
         color: #fff;
-        font-weight: 700;
-        padding: 4pt 5pt;
-        text-align: left;
-        font-size: 8pt;
+        padding: 3pt 6pt;
+        margin: 9pt 0 5pt;
+      }
+
+      /* ── Champs parent (table pour alignement fiable) ── */
+      .pf-parent-table { width: 100%; border-collapse: collapse; margin-bottom: 4pt; }
+      .pf-parent-table td { padding: 0 8pt 0 0; vertical-align: bottom; }
+      .pf-parent-table td:last-child { padding-right: 0; }
+      .pf-label { font-size: 7.5pt; font-weight: 700; display: block; margin-bottom: 2pt; color: #333; }
+      .pf-line  { border: none; border-bottom: 1pt solid #555; height: 15pt; display: block; width: 100%; }
+
+      /* ── Tableau compétiteurs ── */
+      .pf-table { width: 100%; border-collapse: collapse; margin-bottom: 6pt; }
+      .pf-table th {
+        background: #222; color: #fff;
+        font-size: 7.5pt; font-weight: 700;
+        padding: 3.5pt 5pt; text-align: left;
+        border: 0.5pt solid #222;
       }
       .pf-table td {
-        border: 0.5pt solid #ccc;
-        height: 20pt;
-        padding: 2pt 5pt;
-      }
-      .pf-table tr:nth-child(even) td { background: #f7f7f7; }
-
-      .pf-totaux {
-        display: flex;
-        gap: 12pt;
-        margin-top: 6pt;
-      }
-      .pf-totaux .pf-field { flex: none; width: 130pt; }
-
-      .pf-paiement {
-        border: 1.5pt solid #000;
-        border-radius: 4pt;
-        padding: 7pt 10pt;
-        margin-top: 10pt;
-        font-size: 9.5pt;
-      }
-      .pf-paiement strong { font-size: 10pt; }
-      .pf-paiement .pf-prix {
-        display: flex;
-        gap: 20pt;
-        margin-top: 5pt;
+        border: 0.5pt solid #bbb;
+        height: 18pt; padding: 2pt 5pt;
         font-size: 9pt;
       }
+      .pf-table tr:nth-child(even) td { background: #f5f5f5; }
 
-      .pf-note-box {
-        border: 0.5pt solid #aaa;
-        height: 36pt;
-        margin-top: 6pt;
-        padding: 4pt;
-        font-size: 8pt;
-        color: #888;
+      /* ── Repas + Total ── */
+      .pf-bottom-row { display: table; width: 100%; margin-top: 4pt; }
+      .pf-bottom-col  { display: table-cell; vertical-align: top; }
+      .pf-bottom-col.wide { width: 60%; padding-right: 12pt; }
+
+      /* ── Décharge ── */
+      .pf-decharge {
+        border: 1pt solid #999;
+        border-radius: 3pt;
+        padding: 6pt 8pt;
+        margin-top: 8pt;
+        font-size: 7.5pt;
+        line-height: 1.55;
+        color: #222;
       }
+      .pf-decharge strong { font-size: 8pt; }
+      .pf-sign-row { display: table; width: 100%; margin-top: 6pt; }
+      .pf-sign-cell { display: table-cell; vertical-align: bottom; padding-right: 10pt; }
+      .pf-sign-cell:last-child { padding-right: 0; }
+      .pf-sign-check { font-size: 14pt; font-weight: 800; border: 1pt solid #000; width: 13pt; height: 13pt; display: inline-block; vertical-align: middle; margin-right: 5pt; }
 
+      /* ── Paiement ── */
+      .pf-paiement {
+        border: 1.5pt solid #000;
+        border-radius: 3pt;
+        padding: 6pt 9pt;
+        margin-top: 8pt;
+        font-size: 8.5pt;
+      }
+      .pf-paiement strong { font-size: 9pt; }
+      .pf-paiement ul { margin: 4pt 0 4pt 14pt; }
+      .pf-paiement ul li { margin-bottom: 2pt; }
+      .pf-paiement .pf-tarifs { margin-top: 5pt; font-size: 8pt; border-top: 0.5pt solid #ccc; padding-top: 4pt; }
+
+      /* ── Pied de page ── */
       .pf-footer {
-        text-align: center;
-        font-size: 8pt;
-        color: #666;
-        margin-top: 10pt;
-        border-top: 0.5pt solid #ccc;
-        padding-top: 5pt;
+        text-align: center; font-size: 7.5pt; color: #777;
+        margin-top: 8pt; border-top: 0.5pt solid #ccc; padding-top: 4pt;
       }
     }
 
@@ -647,6 +623,19 @@
                   placeholder="Question, allergie, info particulière…"></textarea>
       </div>
 
+      <!-- Décharge -->
+      <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:4px">
+        <p style="font-size:0.82rem;color:var(--muted);line-height:1.6;margin-bottom:12px">
+          <strong style="color:var(--text)">Décharge de responsabilité</strong><br>
+          En inscrivant mon enfant (ou moi-même), je reconnais que la pratique des arts martiaux et la participation aux Jeux martiaux comportent des risques inhérents de blessures. Je confirme que mon enfant est en bonne santé et apte à participer. Je dégage l'Académie d'arts martiaux familial, l'Institut de Val-d'Or, leurs entraîneurs et bénévoles de toute responsabilité en cas d'accident ou de blessure survenu lors de l'événement.
+        </p>
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.88rem;color:var(--text)">
+          <input type="checkbox" id="decharge" required
+                 style="margin-top:2px;width:18px;height:18px;flex-shrink:0;accent-color:var(--gold)" />
+          <span>J'ai lu et j'accepte la décharge de responsabilité ci-dessus <span style="color:var(--gold)">*</span></span>
+        </label>
+      </div>
+
       <button type="submit" class="btn" id="submit-btn">
         Confirmer les inscriptions →
       </button>
@@ -1118,35 +1107,41 @@
 
   <!-- ═══════════ VERSION PAPIER (impression seulement) ═══════════ -->
   <div id="print-form">
+
+    <!-- En-tête -->
     <div class="pf-header">
       <div class="pf-header-left">
         <h1>Académie en Action — Édition 03<br>Jeux martiaux</h1>
-        <p>14 juin 2026 · Feuille d'inscription — une feuille par famille</p>
-        <p style="margin-top:6pt;font-size:9pt">Académie de Rouyn-Noranda &amp; Institut de Val-d'Or</p>
+        <p class="pf-sub">14 juin 2026 &nbsp;·&nbsp; Une feuille par famille</p>
+        <p class="pf-sub">Académie de Rouyn-Noranda &amp; Institut de Val-d'Or</p>
       </div>
-      <div class="pf-qr">
+      <div class="pf-header-right">
         <div id="qrcode-print"></div>
-        <p style="font-size:7pt;text-align:center;margin-top:3pt;color:#444">Inscription en ligne</p>
+        <p>Inscription en ligne</p>
       </div>
     </div>
 
+    <!-- Parent -->
     <div class="pf-section-title">Informations du parent / tuteur</div>
-    <div class="pf-row">
-      <div class="pf-field"><label>Nom complet</label><div class="pf-line"></div></div>
-      <div class="pf-field"><label>Courriel</label><div class="pf-line"></div></div>
-      <div class="pf-field" style="max-width:120pt"><label>Téléphone</label><div class="pf-line"></div></div>
-    </div>
+    <table class="pf-parent-table">
+      <tr>
+        <td style="width:38%"><span class="pf-label">Nom complet</span><span class="pf-line"></span></td>
+        <td style="width:38%"><span class="pf-label">Courriel</span><span class="pf-line"></span></td>
+        <td style="width:24%"><span class="pf-label">Téléphone</span><span class="pf-line"></span></td>
+      </tr>
+    </table>
 
+    <!-- Compétiteurs -->
     <div class="pf-section-title">Compétiteurs</div>
     <table class="pf-table">
       <thead>
         <tr>
-          <th style="width:22%">Prénom</th>
-          <th style="width:20%">Nom</th>
-          <th style="width:8%">Âge</th>
-          <th style="width:11%">Poids (lbs)</th>
-          <th style="width:16%">École</th>
-          <th style="width:23%">Programme</th>
+          <th style="width:20%">Prénom</th>
+          <th style="width:18%">Nom</th>
+          <th style="width:7%">Âge</th>
+          <th style="width:10%">Poids (lbs)</th>
+          <th style="width:18%">École</th>
+          <th style="width:27%">Programme</th>
         </tr>
       </thead>
       <tbody>
@@ -1157,25 +1152,52 @@
       </tbody>
     </table>
 
-    <div class="pf-totaux">
-      <div class="pf-field"><label>Nb de repas famille (5 $/repas)</label><div class="pf-line"></div></div>
-      <div class="pf-field"><label>Total à payer</label><div class="pf-line"></div></div>
+    <!-- Repas + Note -->
+    <div class="pf-bottom-row">
+      <div class="pf-bottom-col wide">
+        <span class="pf-label">Note / allergie / info particulière</span>
+        <span class="pf-line" style="height:28pt;border-bottom:none;border:0.5pt solid #aaa;display:block"></span>
+      </div>
+      <div class="pf-bottom-col">
+        <span class="pf-label">Repas famille (5 $/pers.)</span>
+        <span class="pf-line"></span>
+        <span class="pf-label" style="margin-top:8pt">Total à payer</span>
+        <span class="pf-line"></span>
+      </div>
     </div>
 
-    <div class="pf-section-title" style="margin-top:8pt">Note</div>
-    <div class="pf-note-box">Allergie, besoin particulier, message…</div>
+    <!-- Décharge -->
+    <div class="pf-decharge">
+      <strong>Décharge de responsabilité — à lire et cocher avant de remettre cette feuille</strong><br>
+      En inscrivant mon enfant (ou moi-même), je reconnais que la pratique des arts martiaux et la participation aux Jeux martiaux comportent des risques inhérents de blessures. Je confirme que mon enfant est en bonne santé et apte à participer. Je dégage l'Académie d'arts martiaux familial, l'Institut de Val-d'Or, leurs entraîneurs et bénévoles de toute responsabilité en cas d'accident ou de blessure survenu lors de l'événement.
+      <div class="pf-sign-row" style="margin-top:8pt">
+        <div class="pf-sign-cell" style="width:5%">
+          <span class="pf-sign-check">&nbsp;</span>
+        </div>
+        <div class="pf-sign-cell" style="width:47%">
+          <span class="pf-label">J'ai lu et j'accepte la décharge ci-dessus</span>
+          <span class="pf-line"></span>
+        </div>
+        <div class="pf-sign-cell" style="width:48%">
+          <span class="pf-label">Signature du parent / tuteur</span>
+          <span class="pf-line"></span>
+        </div>
+      </div>
+    </div>
 
+    <!-- Paiement -->
     <div class="pf-paiement">
       <strong>Paiement — le plus tôt possible, en liquide 💵</strong>
-      <div class="pf-prix">
-        <span>🔴 Académie de Rouyn-Noranda → <strong>Karine</strong> (pendant les heures de cours)</span>
-        <span>🔴 Institut de Val-d'Or → <strong>Sensei Ralph</strong></span>
-      </div>
-      <div style="margin-top:5pt;font-size:8.5pt">
-        SuperKids &amp; Petits Samouraïs (6 ans et moins) : <strong>40 $</strong> &nbsp;|&nbsp;
-        Groupe régulier (6 ans et plus) : <strong>60 $</strong> &nbsp;|&nbsp;
-        Pizza <strong>GRATUITE</strong> pour les compétiteurs · Repas famille : <strong>5 $/pers.</strong><br>
-        🍕 Pas payé d'avance = pas de pizza le jour J
+      <ul>
+        <li><strong>Académie de Rouyn-Noranda</strong> → payer à <strong>Karine</strong> pendant les heures de cours</li>
+        <li><strong>Institut de Val-d'Or</strong> → payer à <strong>Sensei Ralph</strong></li>
+      </ul>
+      <div class="pf-tarifs">
+        SuperKids &amp; Petits Samouraïs (6 ans et moins) : <strong>40 $</strong> &nbsp;·&nbsp;
+        Groupe régulier (6 ans et plus) : <strong>60 $</strong> &nbsp;·&nbsp;
+        Repas famille : <strong>5 $/pers.</strong> &nbsp;·&nbsp;
+        Pizza <strong>GRATUITE</strong> pour les compétiteurs<br>
+        ⚠️ Pas payé d'avance = pas de pizza le jour J
       </div>
     </div>
 
