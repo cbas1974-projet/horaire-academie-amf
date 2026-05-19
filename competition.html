@@ -561,6 +561,19 @@
 
       const API_URL = 'https://leads.srv1302277.hstgr.cloud/competition/submit';
 
+      // ── Poids : requis Institut, optionnel Académie ──
+      window.updateWeightLabel = function (schoolSel) {
+        var bloc = schoolSel.closest('.participant-bloc');
+        var lbl  = bloc.querySelector('.weight-req-label');
+        if (schoolSel.value === 'institut') {
+          lbl.textContent = ' *';
+          lbl.style.color = 'var(--gold)';
+        } else {
+          lbl.textContent = ' (optionnel)';
+          lbl.style.color = '';
+        }
+      };
+
       // ── Compteur public ──
       fetch('https://leads.srv1302277.hstgr.cloud/competition/count')
         .then(function(r){ return r.json(); })
@@ -690,7 +703,7 @@
               <div class="field-error"></div>
             </div>
             <div data-field="weight">
-              <label>Poids <span class="opt">(lbs)</span></label>
+              <label>Poids <span class="weight-req-label opt">(lbs)</span></label>
               <input type="number" name="p_weight[]" min="0" max="660" step="0.5"
                      inputmode="decimal" placeholder="lbs" />
               <div class="field-error"></div>
@@ -709,7 +722,7 @@
             </div>
             <div data-field="school">
               <label>École <span style="color:var(--gold)">*</span></label>
-              <select name="p_school[]" required>
+              <select name="p_school[]" required onchange="updateWeightLabel(this)">
                 <option value="" disabled selected>-- Choisir --</option>
                 <option value="academie">Académie</option>
                 <option value="institut">Institut</option>
@@ -843,9 +856,13 @@
             valid = false;
             if (!firstErrEl) firstErrEl = bloc.querySelector('[name="p_school[]"]');
           }
-          if (wtRaw !== '') {
+          if (school === 'institut' && wtRaw === '') {
+            setErr(bloc, 'weight', 'Poids requis pour l\'Institut.');
+            valid = false;
+            if (!firstErrEl) firstErrEl = bloc.querySelector('[name="p_weight[]"]');
+          } else if (wtRaw !== '') {
             const w = parseFloat(wtRaw);
-            if (isNaN(w) || w <= 0 || w > 300) {
+            if (isNaN(w) || w <= 0 || w > 660) {
               setErr(bloc, 'weight', 'Poids invalide (0–660 lbs).');
               valid = false;
             }
