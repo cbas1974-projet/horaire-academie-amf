@@ -518,7 +518,13 @@
 
   <div class="hero" id="hero">
     <h1>Inscris ton enfant aux<br><span>Jeux martiaux !</span></h1>
-    <p>Un échange amical pour se dépasser.<br>Académie de Rouyn-Noranda · Institut de Val-d'Or</p>
+    <p>Un échange amical pour se dépasser.<br>Académie de Rouyn-Noranda · Institut Impact Élite Martial de Val-d'Or</p>
+  </div>
+
+  <div style="text-align:center;margin:0 auto 20px;max-width:480px;background:rgba(201,162,39,0.08);border:1px solid var(--gold);border-radius:10px;padding:12px 16px;font-size:0.82rem;line-height:1.9;color:var(--text)">
+    ⏰ <strong>Portes</strong> : 9h00 &nbsp;·&nbsp; <strong>Pesé officiel</strong> : 9h00 – 9h30 &nbsp;·&nbsp; <strong>Combats</strong> : 10h00<br>
+    💵 <strong>Rouyn-Noranda</strong> : payer Karine à l'avance pendant les heures de cours<br>
+    💵 <strong>Institut (Val-d'Or)</strong> : payer Karine à la réception — arriver à <strong>9h15 au plus tard</strong> · comptant · montant exact de l'inscription
   </div>
 
   <div id="inscrits-count" style="text-align:center;margin-bottom:20px;font-size:0.85rem;color:var(--muted)">
@@ -547,9 +553,9 @@
       <span>🍕 Pas payé d'avance = pas de pizza le jour J</span>
     </div>
     <p class="tarif-note" style="margin-top:10px;color:#f87171;font-style:normal;font-weight:600;font-size:0.82rem;line-height:1.8">
-      Paiement comptant<br>
-      💵 <strong>Rouyn</strong> → Karine (trésorière) pendant les heures de cours<br>
-      💵 <strong>Institut</strong> → Sensei Ralph
+      Paiement comptant uniquement<br>
+      💵 <strong>Rouyn-Noranda</strong> → payer Karine à l'avance pendant les heures de cours<br>
+      💵 <strong>Institut Impact Élite Martial (Val-d'Or)</strong> → payer Karine à la réception le jour même · arriver à 9h15 au plus tard · comptant · montant exact · aucun ajout possible
     </p>
   </div>
 
@@ -1073,7 +1079,7 @@
         if (totalAcademie > 0)
           html += '💵 Académie → payer à <strong>Karine</strong> (heures de cours) : <strong style="color:var(--gold-light)">' + totalAcademie + ' $</strong><br>';
         if (totalInstitut > 0)
-          html += '💵 Institut → payer à <strong>Sensei Ralph</strong> : <strong style="color:var(--gold-light)">' + totalInstitut + ' $</strong>';
+          html += '💵 Institut (Val-d\'Or) → payer Karine à la réception le jour même · 9h15 au plus tard · comptant · montant exact : <strong style="color:var(--gold-light)">' + totalInstitut + ' $</strong>';
         html += '</div>';
 
         if (_payload.note) html += '<div class="recap-line">Note : <em>' + escHtml(_payload.note) + '</em></div>';
@@ -1124,7 +1130,7 @@
               if (tA > 0) tA += repas; else tI += repas;
               let s = '<br><br>';
               if (tA > 0) s += '<strong style="color:var(--gold-light)">💵 Académie → Karine (heures de cours) : ' + tA + ' $</strong><br>';
-              if (tI > 0) s += '<strong style="color:var(--gold-light)">💵 Institut → Sensei Ralph : ' + tI + ' $</strong>';
+              if (tI > 0) s += '<strong style="color:var(--gold-light)">💵 Institut (Val-d\'Or) → payer Karine à la réception · 9h15 au plus tard · comptant · montant exact : ' + tI + ' $</strong>';
               return s;
             })();
 
@@ -1156,7 +1162,7 @@
       <div class="pf-header-left">
         <h1>Académie en Action — Édition 03<br>Jeux martiaux</h1>
         <p class="pf-sub">14 juin 2026 &nbsp;·&nbsp; Une feuille par famille</p>
-        <p class="pf-sub">Académie de Rouyn-Noranda &amp; Institut de Val-d'Or</p>
+        <p class="pf-sub">Académie de Rouyn-Noranda &amp; Institut Impact Élite Martial de Val-d'Or</p>
       </div>
       <div class="pf-header-right">
         <div id="qrcode-print"></div>
@@ -1233,7 +1239,7 @@
       <strong>Paiement — le plus tôt possible, comptant 💵</strong>
       <ul>
         <li><strong>Académie de Rouyn-Noranda</strong> → payer à <strong>Karine</strong> pendant les heures de cours</li>
-        <li><strong>Institut de Val-d'Or</strong> → payer à <strong>Sensei Ralph</strong></li>
+        <li><strong>Institut Impact Élite Martial de Val-d'Or</strong> → payer Karine à la réception · arriver à <strong>9h15 au plus tard</strong> · comptant · montant exact de l'inscription · aucun ajout possible</li>
       </ul>
       <div class="pf-tarifs">
         SuperKids &amp; Petits Samouraïs (6 ans et moins) : <strong>40 $</strong> &nbsp;·&nbsp;
