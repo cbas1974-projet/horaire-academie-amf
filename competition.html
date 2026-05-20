@@ -1066,7 +1066,8 @@
           if (p.school === 'institut') totalInstitut += p.frais;
           else totalAcademie += p.frais;
         });
-        totalAcademie += totalRepas;
+        if (totalAcademie > 0) totalAcademie += totalRepas;
+        else totalInstitut += totalRepas;
 
         html += '<div class="recap-line" style="padding-top:8px;margin-top:4px;border-top:1px solid rgba(201,162,39,0.25)">';
         if (totalAcademie > 0)
@@ -1119,7 +1120,8 @@
               _payload.participants.forEach(function (p) {
                 if (p.school === 'institut') tI += p.frais; else tA += p.frais;
               });
-              tA += _payload.family_meals * 5;
+              const repas = _payload.family_meals * 5;
+              if (tA > 0) tA += repas; else tI += repas;
               let s = '<br><br>';
               if (tA > 0) s += '<strong style="color:var(--gold-light)">💵 Académie → Karine (heures de cours) : ' + tA + ' $</strong><br>';
               if (tI > 0) s += '<strong style="color:var(--gold-light)">💵 Institut → Sensei Ralph : ' + tI + ' $</strong>';
