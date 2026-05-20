@@ -802,24 +802,7 @@
         const bloc = document.createElement('div');
         bloc.className = 'participant-bloc';
 
-        const label = document.createElement('p');
-        label.className = 'bloc-label';
-        label.textContent = 'Compétiteur ' + (index + 1);
-        bloc.appendChild(label);
-
-        if (removable) {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'btn-suppr';
-          btn.title = 'Retirer';
-          btn.textContent = '✕';
-          btn.addEventListener('click', function () {
-            bloc.remove();
-            reindexerBlocs();
-            updateCount();
-          });
-          bloc.appendChild(btn);
-        }
+        bloc.innerHTML = '<p class="bloc-label">Compétiteur ' + (index + 1) + '</p>';
 
         bloc.innerHTML += `
           <div class="field row" style="margin-bottom:12px">
@@ -869,6 +852,20 @@
             </div>
           </div>
         `;
+
+        if (removable) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn-suppr';
+          btn.title = 'Retirer';
+          btn.textContent = '✕';
+          btn.addEventListener('click', function () {
+            bloc.remove();
+            reindexerBlocs();
+            updateCount();
+          });
+          bloc.appendChild(btn);
+        }
 
         return bloc;
       }
@@ -1067,6 +1064,20 @@
         html += 'À payer le plus tôt possible à <strong>Karine</strong> pendant les heures de cours : <strong style="color:var(--gold-light)">' + (totalComp + totalRepas) + ' $</strong>';
         html += '</div>';
 
+        let totalAcademie = 0, totalInstitut = 0;
+        participants.forEach(function (p) {
+          if (p.school === 'institut') totalInstitut += p.frais;
+          else totalAcademie += p.frais;
+        });
+        totalAcademie += totalRepas;
+
+        html += '<div class="recap-line" style="padding-top:8px;margin-top:4px;border-top:1px solid rgba(201,162,39,0.25)">';
+        if (totalAcademie > 0)
+          html += '💵 Académie → payer à <strong>Karine</strong> (heures de cours) : <strong style="color:var(--gold-light)">' + totalAcademie + ' $</strong><br>';
+        if (totalInstitut > 0)
+          html += '💵 Institut → payer à <strong>Sensei Ralph</strong> : <strong style="color:var(--gold-light)">' + totalInstitut + ' $</strong>';
+        html += '</div>';
+
         if (_payload.note) html += '<div class="recap-line">Note : <em>' + escHtml(_payload.note) + '</em></div>';
 
         recapContent.innerHTML = html;
@@ -1106,8 +1117,17 @@
           }).join('<br>') +
           (_payload.family_meals > 0
             ? '<br><span style="color:var(--muted)">+ ' + _payload.family_meals + ' repas famille (' + (_payload.family_meals * 5) + ' $)</span>'
-            : '') +
-          '<br><br><strong style="color:var(--gold-light)">À payer le plus tôt possible à Karine (pendant les heures de cours) : ' + totalFinal + ' $</strong>';
+            : '') + (function () {
+              let tA = 0, tI = 0;
+              _payload.participants.forEach(function (p) {
+                if (p.school === 'institut') tI += p.frais; else tA += p.frais;
+              });
+              tA += _payload.family_meals * 5;
+              let s = '<br><br>';
+              if (tA > 0) s += '<strong style="color:var(--gold-light)">💵 Académie → Karine (heures de cours) : ' + tA + ' $</strong><br>';
+              if (tI > 0) s += '<strong style="color:var(--gold-light)">💵 Institut → Sensei Ralph : ' + tI + ' $</strong>';
+              return s;
+            })();
 
           hero.style.display = 'none';
           formCard.style.display = 'none';
