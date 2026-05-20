@@ -1060,9 +1060,6 @@
           html += '<div class="recap-line">Repas famille : <strong>' + _payload.family_meals + ' × 5 $ = ' + (_payload.family_meals * 5) + ' $</strong></div>';
 
         const totalRepas = _payload.family_meals * 5;
-        html += '<div class="recap-line" style="padding-top:8px;margin-top:4px;border-top:1px solid rgba(201,162,39,0.25)">';
-        html += 'À payer le plus tôt possible à <strong>Karine</strong> pendant les heures de cours : <strong style="color:var(--gold-light)">' + (totalComp + totalRepas) + ' $</strong>';
-        html += '</div>';
 
         let totalAcademie = 0, totalInstitut = 0;
         participants.forEach(function (p) {
