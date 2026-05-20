@@ -148,7 +148,7 @@
       background: rgba(201,162,39,0.15);
       border: 1px solid var(--gold);
       color: var(--gold-light);
-      font-size: 0.75rem;
+      font-size: 0.9rem;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -416,6 +416,10 @@
     .btn:active { transform: scale(0.98); }
     #btn-confirmer { background: #dc2626; color: #fff; }
     #btn-confirmer:hover { background: #ef4444; }
+    #submit-btn { background: #dc2626; color: #fff; }
+    #submit-btn:hover { background: #ef4444; }
+    #decharge { accent-color: var(--gold); }
+    #decharge:checked { accent-color: #22c55e !important; }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
     /* ── Récap ── */
@@ -510,7 +514,7 @@
     <img src="logo.png" alt="Académie d'arts martiaux familial" />
   </div>
 
-  <div class="badge">Académie en Action · Édition 03 · 14 juin 2026</div>
+  <div class="badge">Académie en Action · 3e Édition · 14 juin 2026</div>
 
   <div class="hero" id="hero">
     <h1>Inscris ton enfant aux<br><span>Jeux martiaux !</span></h1>
@@ -536,14 +540,14 @@
       <span style="color:#4ade80;font-weight:700;font-size:0.95rem">🍕 PIZZA GRATUITE pour chaque compétiteur</span>
     </div>
     <div class="tarif-line" style="margin-top:4px">
-      <span>Repas famille supplémentaire (pizza)</span>
+      <span>Ta famille mange aussi ? (pizza)</span>
       <span class="prix">5 $ / pers.</span>
     </div>
     <div class="tarif-line" style="color:#f87171;font-weight:700;padding:8px 0">
       <span>🍕 Pas payé d'avance = pas de pizza le jour J</span>
     </div>
     <p class="tarif-note" style="margin-top:10px;color:#f87171;font-style:normal;font-weight:600;font-size:0.82rem;line-height:1.8">
-      Payable en liquide<br>
+      Paiement comptant<br>
       💵 <strong>Rouyn</strong> → Karine (trésorière) pendant les heures de cours<br>
       💵 <strong>Institut</strong> → Sensei Ralph
     </p>
@@ -607,7 +611,7 @@
 
       <!-- ══ REPAS FAMILLE ══ -->
       <div class="field" style="margin-bottom:20px">
-        <label>Repas famille supplémentaires <span class="opt">(5 $ / personne, en plus des compétiteurs)</span></label>
+        <label>Ta famille mange aussi ? <span class="opt">(5 $/pers. · comptant sur place)</span></label>
         <div class="meal-wrap">
           <button type="button" class="meal-btn" id="meal-minus">−</button>
           <input type="number" class="meal-count" id="meal-count" value="0" min="0" max="30" readonly />
@@ -631,7 +635,7 @@
         </p>
         <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.88rem;color:var(--text)">
           <input type="checkbox" id="decharge" required
-                 style="margin-top:2px;width:18px;height:18px;flex-shrink:0;accent-color:var(--gold)" />
+                 style="margin-top:2px;width:18px;height:18px;flex-shrink:0" />
           <span>J'ai lu et j'accepte la décharge de responsabilité ci-dessus <span style="color:var(--gold)">*</span></span>
         </label>
       </div>
@@ -665,7 +669,21 @@
       Paiement sur place. On a hâte de vous voir !
     </p>
     <div class="merci-participants" id="merci-participants"></div>
-    <button class="btn-secondary" onclick="location.reload()">
+    <div style="margin-top:20px;width:100%;border-radius:10px;overflow:hidden;border:1px solid var(--border)">
+      <p style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--gold);padding:10px 14px 0">📍 Où nous trouver</p>
+      <iframe
+        id="map-iframe" src=""
+        width="100%" height="180" style="display:block;border:none;filter:grayscale(30%) brightness(0.85)"
+        referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <a href="https://www.google.com/maps/search/?api=1&query=236+avenue+du+Portage+Rouyn-Noranda+QC"
+         target="_blank" rel="noopener"
+         style="display:block;background:rgba(15,15,26,0.85);padding:8px 12px;font-size:0.8rem;color:var(--muted);text-decoration:none;text-align:center;transition:color 0.2s;border-top:1px solid var(--border)"
+         onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--muted)'">
+        236, avenue du Portage (sous-sol) · Ouvrir dans Google Maps →
+      </a>
+    </div>
+
+    <button class="btn-secondary" onclick="location.reload()" style="margin-top:16px">
       Inscrire une autre famille
     </button>
   </div>
@@ -866,6 +884,11 @@
         participantsList.appendChild(creerBloc(n, true));
         updateCount();
       };
+
+      // ── Croche vert décharge ──
+      document.getElementById('decharge').addEventListener('change', function () {
+        this.style.accentColor = this.checked ? '#22c55e' : 'var(--gold)';
+      });
 
       // ── Init premier bloc (non removable) ──
       participantsList.appendChild(creerBloc(0, false));
@@ -1089,6 +1112,7 @@
           hero.style.display = 'none';
           formCard.style.display = 'none';
           merci.style.display = 'block';
+          document.getElementById('map-iframe').src = 'https://maps.google.com/maps?q=236+Avenue+du+Portage,+Rouyn-Noranda,+QC&z=16&output=embed';
           window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (err) {
           btnConfirmer.textContent = 'Confirmer et envoyer →';
@@ -1187,7 +1211,7 @@
 
     <!-- Paiement -->
     <div class="pf-paiement">
-      <strong>Paiement — le plus tôt possible, en liquide 💵</strong>
+      <strong>Paiement — le plus tôt possible, comptant 💵</strong>
       <ul>
         <li><strong>Académie de Rouyn-Noranda</strong> → payer à <strong>Karine</strong> pendant les heures de cours</li>
         <li><strong>Institut de Val-d'Or</strong> → payer à <strong>Sensei Ralph</strong></li>
