@@ -766,7 +766,7 @@
         if (err.message === 'RATE_LIMIT') {
           alert('Vous avez déjà soumis plusieurs fois récemment. Attendez une heure et réessayez, ou contactez-nous directement.');
         } else {
-          alert('Une erreur est survenue. Réessaie ou contacte-nous directement.');
+          alert('Une erreur réseau est survenue (' + err.message + ').\n\nVérifie ta connexion, désactive ton VPN ou antivirus, puis réessaie.\n\nOu écris-nous directement à info@academie-rouyn.com');
         }
         console.error(err);
       }
