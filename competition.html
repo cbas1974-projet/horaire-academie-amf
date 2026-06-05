@@ -834,7 +834,7 @@
               <div class="field-error"></div>
             </div>
           </div>
-          <div class="field row" style="margin-bottom:0">
+          <div class="field row" style="margin-bottom:12px">
             <div data-field="programme">
               <label>Programme <span style="color:var(--gold)">*</span></label>
               <select name="p_programme[]" required onchange="updateTotal()">
@@ -852,6 +852,14 @@
                 <option value="academie">Académie</option>
                 <option value="institut">Institut</option>
               </select>
+              <div class="field-error"></div>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <div data-field="belt">
+              <label>Couleur de ceinture de l'enfant <span style="color:var(--gold)">*</span></label>
+              <input type="text" name="p_belt[]" required
+                     placeholder="Ex. blanche, jaune, orange… (ou « je ne sais pas »)" />
               <div class="field-error"></div>
             </div>
           </div>
@@ -975,6 +983,7 @@
           const wtRaw   = (bloc.querySelector('[name="p_weight[]"]').value || '').trim();
           const school  = (bloc.querySelector('[name="p_school[]"]').value || '').trim();
           const programme = (bloc.querySelector('[name="p_programme[]"]').value || '').trim();
+          const belt    = (bloc.querySelector('[name="p_belt[]"]').value || '').trim();
 
           if (!fn)  { setErr(bloc, 'first_name', 'Prénom requis.'); valid = false; if (!firstErrEl) firstErrEl = bloc.querySelector('[name="p_first_name[]"]'); }
           if (!ln)  { setErr(bloc, 'last_name',  'Nom requis.');    valid = false; if (!firstErrEl) firstErrEl = bloc.querySelector('[name="p_last_name[]"]'); }
@@ -1000,6 +1009,11 @@
             valid = false;
             if (!firstErrEl) firstErrEl = bloc.querySelector('[name="p_school[]"]');
           }
+          if (!belt) {
+            setErr(bloc, 'belt', 'Couleur de ceinture requise (ou « je ne sais pas »).');
+            valid = false;
+            if (!firstErrEl) firstErrEl = bloc.querySelector('[name="p_belt[]"]');
+          }
           if (school === 'institut' && wtRaw === '') {
             setErr(bloc, 'weight', 'Poids requis pour l\'Institut.');
             valid = false;
@@ -1019,6 +1033,7 @@
             weight:      wtRaw !== '' ? parseFloat(wtRaw) : null,
             school:      school,
             programme:   programme,
+            belt:        belt,
             frais:       programme === 'superkids' ? 40 : 60,
           });
         });
