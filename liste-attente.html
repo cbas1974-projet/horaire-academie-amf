@@ -746,11 +746,26 @@
       btn.disabled = true;
 
       try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(_payload)
-        });
+        // Retry réseau : si le serveur redémarre (~1s), réessaie au lieu d'échouer.
+        // On ne réessaie QUE sur une erreur réseau (fetch rejeté), jamais sur une réponse HTTP.
+        let res, lastErr;
+        for (let i = 0; i < 3; i++) {
+          try {
+            res = await fetch(API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(_payload)
+            });
+            break;
+          } catch (netErr) {
+            lastErr = netErr;
+            if (i < 2) {
+              btn.textContent = 'Reconnexion…';
+              await new Promise(r => setTimeout(r, 1500));
+            }
+          }
+        }
+        if (!res) throw lastErr;
         if (res.status === 429) throw new Error('RATE_LIMIT');
         if (!res.ok) throw new Error(await res.text());
         const lignesMerci = _payload.enfants.map(p =>
