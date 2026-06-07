@@ -313,7 +313,18 @@
       </div>
       <div class="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
         <input type="hidden" id="courseId" />
-        <input type="hidden" id="courseDayIndex" />
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Jour de la semaine <span class="text-red-500">*</span></label>
+          <select id="courseDayIndex" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="0">Dimanche</option>
+            <option value="1">Lundi</option>
+            <option value="2">Mardi</option>
+            <option value="3">Mercredi</option>
+            <option value="4">Jeudi</option>
+            <option value="5">Vendredi</option>
+            <option value="6">Samedi</option>
+          </select>
+        </div>
         <div>
           <label class="block text-xs font-medium text-gray-600 mb-1">Nom du cours <span class="text-red-500">*</span></label>
           <input id="courseName" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex: Enfants débutants" />
@@ -349,6 +360,17 @@
             <option value="superkids">Programme Superkids</option>
             <option value="gracie">Gracie Jiu-Jitsu</option>
           </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Couleur personnalisée</label>
+          <div class="flex items-center gap-2 mb-2">
+            <input type="checkbox" id="courseColorEnabled" class="rounded" />
+            <label for="courseColorEnabled" class="text-xs text-gray-600 cursor-pointer">Activer une couleur personnalisée</label>
+          </div>
+          <div id="courseColorPicker" class="hidden flex items-center gap-3">
+            <input id="courseColorOverride" type="color" value="#93c5fd" class="w-10 h-10 rounded cursor-pointer border border-gray-300" />
+            <span class="text-xs text-gray-400">Remplace la couleur de la discipline pour ce cours</span>
+          </div>
         </div>
         <div>
           <label class="block text-xs font-medium text-gray-600 mb-1">Plage de dates</label>

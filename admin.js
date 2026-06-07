@@ -180,6 +180,7 @@ async function loadFromSupabase() {
         duration: calcDuration(c.start_time, c.end_time),
         dateRangeId: c.date_range_id || '',
         sessionId: c.session_id || null,
+        colorOverride: c.color_override || '',
       })),
   }));
 
@@ -565,14 +566,14 @@ function buildCourseRow(cls, dayIndex) {
     : 'border-b border-gray-100 hover:bg-gray-100 transition border-l-4 bg-gray-50 opacity-60';
 
   return `
-    <tr class="${rowClass}" style="border-left-color:${disc.color}">
+    <tr class="${rowClass}" style="border-left-color:${cls.colorOverride || disc.color}">
       <td class="px-4 py-2 whitespace-nowrap text-gray-700">${escHtml(cls.time || '')}</td>
       <td class="px-4 py-2 font-medium ${isActive ? 'text-gray-900' : 'text-gray-500'}">${escHtml(cls.name || '')}</td>
       <td class="px-4 py-2 text-gray-500 hidden md:table-cell">${escHtml(cls.description || '')}</td>
       <td class="px-4 py-2 text-gray-500 hidden sm:table-cell">${escHtml(cls.ageGroup || '')}</td>
       <td class="px-4 py-2">
         <span class="inline-flex items-center gap-1">
-          <span class="discipline-dot" style="background:${disc.color}"></span>
+          <span class="discipline-dot" style="background:${cls.colorOverride || disc.color}"></span>
           <span class="text-gray-600 text-xs hidden lg:inline">${escHtml(disc.label)}</span>
         </span>
       </td>
@@ -632,6 +633,11 @@ function openCourseModal(cls, dayIndex) {
   }
   drSelect.value = cls ? (cls.dateRangeId || '') : '';
 
+  const hasColor = !!(cls && cls.colorOverride);
+  document.getElementById('courseColorEnabled').checked = hasColor;
+  document.getElementById('courseColorPicker').classList.toggle('hidden', !hasColor);
+  document.getElementById('courseColorOverride').value = (cls && cls.colorOverride) || '#93c5fd';
+
   updateDurationDisplay();
   modal.classList.remove('hidden');
   document.getElementById('courseName').focus();
@@ -665,9 +671,11 @@ async function saveCourse() {
   const desc        = document.getElementById('courseDescription').value.trim();
   const ageGroup    = document.getElementById('courseAgeGroup').value.trim();
   const discipline  = document.getElementById('courseDiscipline').value;
-  const dateRangeId = document.getElementById('courseDateRange').value;
-  const dayIndex    = parseInt(document.getElementById('courseDayIndex').value, 10);
-  const id          = document.getElementById('courseId').value;
+  const dateRangeId   = document.getElementById('courseDateRange').value;
+  const dayIndex      = parseInt(document.getElementById('courseDayIndex').value, 10);
+  const id            = document.getElementById('courseId').value;
+  const colorEnabled  = document.getElementById('courseColorEnabled').checked;
+  const colorOverride = colorEnabled ? document.getElementById('courseColorOverride').value : '';
 
   if (!name)       { showToast('Le nom du cours est requis.', 'error'); return; }
   if (!startTime)  { showToast('L\'heure de début est requise.', 'error'); return; }
@@ -682,11 +690,29 @@ async function saveCourse() {
   if (!day) return;
 
   const courseId = id || ('c' + Date.now());
-  const localCourse = { id: courseId, time, startTime, endTime, name, description: desc, ageGroup, discipline, duration, dateRangeId, sessionId: currentSessionId || null };
+
+  // Preserve sessionId: editing keeps the original session, new course uses active filter
+  let resolvedSessionId = currentSessionId;
+  if (id) {
+    for (const d of data.schedule) {
+      const existing = d.classes.find(c => c.id === id);
+      if (existing) { resolvedSessionId = existing.sessionId || currentSessionId; break; }
+    }
+  } else {
+    if (selectedCoursSessionId && selectedCoursSessionId !== '__all__') {
+      resolvedSessionId = selectedCoursSessionId;
+    }
+  }
+
+  const localCourse = { id: courseId, time, startTime, endTime, name, description: desc, ageGroup, discipline, duration, dateRangeId, sessionId: resolvedSessionId, colorOverride };
 
   if (id) {
-    const idx = day.classes.findIndex(c => c.id === id);
-    if (idx !== -1) day.classes[idx] = localCourse;
+    // Remove from whichever day currently holds this course (may have changed)
+    for (const d of data.schedule) {
+      const idx = d.classes.findIndex(c => c.id === id);
+      if (idx !== -1) { d.classes.splice(idx, 1); break; }
+    }
+    day.classes.push(localCourse);
   } else {
     day.classes.push(localCourse);
   }
@@ -707,9 +733,10 @@ async function saveCourse() {
       age_group: ageGroup,
       discipline,
       date_range_id: dateRangeId || null,
-      session_id: currentSessionId || null,
+      session_id: resolvedSessionId || null,
       is_active: true,
       sort_order: day.classes.length - 1,
+      color_override: colorOverride || null,
     }]);
     showToast(id ? 'Cours mis à jour' : 'Cours ajouté', 'success');
     markSaved();
@@ -1860,6 +1887,9 @@ function initBindings() {
   document.getElementById('courseEndTime').addEventListener('change', updateDurationDisplay);
   document.getElementById('courseStartTime').addEventListener('input', updateDurationDisplay);
   document.getElementById('courseEndTime').addEventListener('input', updateDurationDisplay);
+  document.getElementById('courseColorEnabled').addEventListener('change', function () {
+    document.getElementById('courseColorPicker').classList.toggle('hidden', !this.checked);
+  });
 
   // Holiday modal
   document.getElementById('addHolidayBtn').addEventListener('click', () => openHolidayModal(null));
