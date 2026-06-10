@@ -524,7 +524,7 @@
   </footer>
 
   <script>
-    const API_URL = 'https://leads.srv1302277.hstgr.cloud/submit';
+    const API_URL = '/api/submit';  // proxy same-origin Netlify -> VPS (fiable dans le navigateur FB)
     let _payload = null;
 
     // ── Mapping cours → catégorie spots ──
@@ -541,7 +541,7 @@
     };
     let _spots = {};
 
-    fetch('https://leads.srv1302277.hstgr.cloud/spots')
+    fetch('/api/spots')
       .then(r => r.json())
       .then(d => { _spots = d; })
       .catch(() => {});
@@ -577,7 +577,7 @@
     }
 
     // ── Compteur social ──
-    fetch('https://leads.srv1302277.hstgr.cloud/count')
+    fetch('/api/count')
       .then(r => r.json())
       .then(d => {
         if (d.count >= 2) {
@@ -778,13 +778,51 @@
       } catch (err) {
         btn.textContent = 'Confirmer et envoyer →';
         btn.disabled = false;
-        if (err.message === 'RATE_LIMIT') {
-          alert('Vous avez déjà soumis plusieurs fois récemment. Attendez une heure et réessayez, ou contactez-nous directement.');
-        } else {
-          alert('Une erreur réseau est survenue (' + err.message + ').\n\nVérifie ta connexion, désactive ton VPN ou antivirus, puis réessaie.\n\nOu écris-nous directement à info@academie-rouyn.com');
-        }
         console.error(err);
+
+        // ── Couche observabilité : signaler l'échec au serveur (sinon angle mort total) ──
+        try {
+          fetch('/api/submit-failed', {
+            method: 'POST', keepalive: true,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ error: String(err && err.message || err), ua: navigator.userAgent, payload: _payload })
+          }).catch(() => {});
+        } catch (_) {}
+
+        // ── Couche filet : on ne perd jamais la saisie ──
+        try { localStorage.setItem('liste_attente_pending', JSON.stringify(_payload)); } catch (_) {}
+
+        if (err.message === 'RATE_LIMIT') {
+          afficherSecours('Tu as déjà soumis plusieurs fois récemment. Attends une heure et réessaie, ou écris-nous directement.', false);
+          return;
+        }
+        const inFBApp = /FBAN|FBAV|Instagram/i.test(navigator.userAgent);
+        afficherSecours(
+          inFBApp
+            ? 'Le navigateur intégré de Facebook bloque parfois l\'envoi. Touche les <strong>⋯</strong> en haut à droite → <strong>« Ouvrir dans le navigateur externe »</strong> (Chrome / Safari), reviens sur cette page et appuie sur Réessayer.'
+            : 'Un souci de connexion a empêché l\'envoi. Vérifie ta connexion et réessaie.',
+          true
+        );
       }
+    }
+
+    // ── Panneau de secours : la personne ne quitte jamais sans une porte de sortie ──
+    function afficherSecours(message, montrerReessayer) {
+      let p = document.getElementById('panneau-secours');
+      if (!p) {
+        p = document.createElement('div');
+        p.id = 'panneau-secours';
+        p.style.cssText = 'margin-top:18px;padding:16px 18px;border-radius:12px;background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.35);color:#fca5a5;font-size:0.95rem;line-height:1.55;text-align:left';
+        const ancre = document.getElementById('btn-confirmer');
+        (ancre && ancre.parentElement ? ancre.parentElement : document.body).appendChild(p);
+      }
+      p.innerHTML =
+        '<div style="font-weight:700;margin-bottom:8px">⚠️ Ton inscription n\'est pas passée</div>' +
+        '<div style="margin-bottom:12px">' + message + '</div>' +
+        (montrerReessayer ? '<button type="button" onclick="confirmerEnvoi()" style="background:#22c55e;color:#06240f;border:none;padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer;margin:0 8px 8px 0">↻ Réessayer</button>' : '') +
+        '<a href="mailto:info@academie-rouyn.com?subject=Inscription%20liste%20d%27attente" style="display:inline-block;color:#93c5fd;text-decoration:underline">Ou écris-nous : info@academie-rouyn.com</a>' +
+        '<div style="margin-top:10px;font-size:0.85rem;opacity:0.85">Tu peux aussi nous écrire en privé sur notre page Facebook. 💗 Ta saisie est sauvegardée.</div>';
+      p.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   </script>
 
