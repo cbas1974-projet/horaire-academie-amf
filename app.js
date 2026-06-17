@@ -122,7 +122,18 @@
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
-    return ` background-color:rgba(${r},${g},${b},0.2); border-color:rgba(${r},${g},${b},0.4);`;
+    // fond SOLIDE (le cours spécial ressort franchement) + bordure assortie
+    return ` background-color:rgb(${r},${g},${b}); border-color:rgba(${r},${g},${b},0.9);`;
+  }
+
+  // Texte contrasté pour un fond color_override : blanc sur couleur foncée, sombre sur claire.
+  function colorOverrideText(hex) {
+    if (!hex || hex.length < 7) return '';
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return lum < 0.55 ? '#ffffff' : '#0f0f1a';
   }
 
   /**
@@ -945,7 +956,7 @@
           const ariaHidden = hiddenCls ? ' aria-hidden="true"' : '';
           const mixed = isMixedCourse(cls);
           const coStyle = cls.colorOverride ? colorOverrideStyle(cls.colorOverride) : '';
-          const coLabel = cls.colorOverride ? ` style="color:${cls.colorOverride};"` : '';
+          const coLabel = cls.colorOverride ? ` style="color:${colorOverrideText(cls.colorOverride)};"` : '';
 
           return `
             <div
@@ -961,7 +972,7 @@
               ${DISC_LOGOS[cls.discipline] ? `<img src="${DISC_LOGOS[cls.discipline]}" alt="" class="week-block-watermark" loading="lazy">` : ''}
               <span class="tb-time"${coLabel}>${esc(cls.startTime)} - ${esc(cls.endTime)}</span>
               <span class="tb-name"${coLabel}>${formatCourseName(cls.name)}</span>
-              <span class="tb-age">${esc(cls.ageGroup)}</span>
+              <span class="tb-age"${coLabel}>${esc(cls.ageGroup)}</span>
             </div>`;
         }).join('');
       } else {
