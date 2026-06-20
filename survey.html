@@ -1,0 +1,551 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sondage de satisfaction — Académie en Action Édition 03</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f0f1a;
+      --bg-card:   #16213e;
+      --bg-input:  #1a1a2e;
+      --green:      #10b981;
+      --green-dark: #059669;
+      --green-light:#34d399;
+      --border:    rgba(16, 185, 129, 0.28);
+      --text:      #f0f0f0;
+      --muted:     #a0aec0;
+      --radius:    12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .logo-wrap { margin-bottom: 32px; text-align: center; }
+    .logo-wrap img { height: 92px; width: auto; }
+
+    .badge {
+      display: inline-block;
+      background: rgba(16,185,129,0.15);
+      border: 1px solid var(--green);
+      color: var(--green-light);
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 999px;
+      margin-bottom: 20px;
+    }
+
+    .hero {
+      text-align: center;
+      max-width: 560px;
+      margin-bottom: 32px;
+    }
+    .hero h1 {
+      font-size: clamp(1.25rem, 4vw, 1.7rem);
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 16px;
+    }
+    .hero h1 span { color: var(--green); }
+    .hero p { color: var(--muted); font-size: 1rem; line-height: 1.65; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    /* ── Bloc question ── */
+    .q-bloc {
+      padding-top: 24px;
+      margin-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    .q-bloc:first-of-type { padding-top: 0; margin-top: 0; border-top: none; }
+
+    .q-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.4;
+      margin-bottom: 4px;
+    }
+    .q-title .req { color: var(--green); }
+    .q-help {
+      font-size: 0.86rem;
+      color: var(--muted);
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+    .q-bloc > .q-title:last-child { margin-bottom: 14px; }
+
+    /* ── Étoiles (Q1) ── */
+    .stars {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .star-btn {
+      flex: 1;
+      min-height: 56px;
+      background: var(--bg-input);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 1.7rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .star-btn:hover { border-color: var(--green); }
+    .star-btn:active { transform: scale(0.95); }
+    .star-btn.on {
+      color: #fbbf24;
+      border-color: var(--green);
+      background: rgba(16,185,129,0.12);
+    }
+    .star-btn:focus-visible { outline: 2px solid var(--green-light); outline-offset: 2px; }
+    .stars-label {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--green-light);
+      min-height: 1.2em;
+    }
+
+    /* ── Choix radio en boutons (Q2, Q3) ── */
+    .choices { display: flex; flex-direction: column; gap: 10px; }
+    .choice {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: var(--bg-input);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      min-height: 52px;
+    }
+    .choice:hover { border-color: var(--green); }
+    .choice input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .choice .dot {
+      flex-shrink: 0;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--muted);
+      margin-top: 1px;
+      position: relative;
+      transition: border-color 0.15s;
+    }
+    .choice input:checked ~ .dot { border-color: var(--green); }
+    .choice input:checked ~ .dot::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+    .choice input:checked ~ .choice-text { color: var(--text); }
+    .choice:has(input:checked) {
+      border-color: var(--green);
+      background: rgba(16,185,129,0.10);
+    }
+    .choice input:focus-visible ~ .dot { outline: 2px solid var(--green-light); outline-offset: 2px; }
+    .choice-text { font-size: 0.95rem; color: var(--text); line-height: 1.45; }
+    .choice-text small { display: block; color: var(--muted); font-size: 0.82rem; margin-top: 2px; }
+
+    /* ── Textareas (Q4, Q5) ── */
+    label.txt-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 7px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    label.txt-label .opt {
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 0.78rem;
+      color: #6b7280;
+    }
+    textarea {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 11px 14px;
+      transition: border-color 0.2s;
+      outline: none;
+      resize: vertical;
+      min-height: 80px;
+    }
+    textarea:focus { border-color: var(--green); }
+
+    /* ── Validation ── */
+    .field-error {
+      font-size: 0.82rem;
+      color: #f87171;
+      display: none;
+      margin-top: 8px;
+    }
+    .has-error .field-error { display: block; }
+    .has-error .stars .star-btn { border-color: #f87171; }
+    .global-error {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.4);
+      color: #f87171;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    /* ── Bouton ── */
+    .btn {
+      width: 100%;
+      background: var(--green);
+      color: #04261c;
+      font-family: inherit;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      padding: 16px;
+      cursor: pointer;
+      margin-top: 28px;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn:hover { background: var(--green-light); }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* ── Merci ── */
+    .merci {
+      display: none;
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+    }
+    .merci .check { font-size: 3.5rem; margin-bottom: 20px; }
+    .merci h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 12px; color: var(--green); }
+    .merci p { color: var(--muted); line-height: 1.7; margin-bottom: 16px; }
+    .btn-secondary {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--green);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 8px;
+    }
+    .btn-secondary:hover { background: rgba(16,185,129,0.08); }
+
+    footer { margin-top: 48px; text-align: center; color: #4b5563; font-size: 0.8rem; }
+    .back-link { display: block; margin-top: 20px; color: var(--muted); font-size: 0.85rem; text-decoration: none; transition: color 0.2s; }
+    .back-link:hover { color: var(--green); }
+
+    @media (max-width: 420px) {
+      .card { padding: 24px 16px; }
+      .star-btn { font-size: 1.5rem; min-height: 52px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo-wrap">
+    <img src="logo.png" alt="Académie d'arts martiaux familial" />
+  </div>
+
+  <div class="badge">Académie en Action · 3e Édition · 14 juin 2026</div>
+
+  <div class="hero" id="hero">
+    <h1>Votre avis compte<br><span>sur les Jeux martiaux !</span></h1>
+    <p>Merci d'être venus à <strong>Académie en Action — Édition 03</strong> !<br>
+       Aidez-nous à améliorer le prochain événement — ce court sondage prend 2 minutes.</p>
+  </div>
+
+  <!-- Carte sondage -->
+  <div class="card" id="form-card">
+
+    <form id="survey-form" novalidate>
+      <!-- Honeypot anti-spam -->
+      <input type="text" name="bot-field" style="display:none;position:absolute;left:-9999px" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+      <div class="global-error" id="global-error" role="alert"></div>
+
+      <!-- ══ Q1 — Note globale ══ -->
+      <div class="q-bloc" data-field="q1" role="group" aria-labelledby="q1-title">
+        <p class="q-title" id="q1-title">1. Votre appréciation globale de la journée ? <span class="req" aria-hidden="true">*</span></p>
+        <p class="q-help">Touchez de 1 (à revoir) à 5 étoiles (excellent).</p>
+        <div class="stars" id="stars" role="radiogroup" aria-label="Note de 1 à 5 étoiles">
+          <button type="button" class="star-btn" data-val="1" role="radio" aria-checked="false" aria-label="1 étoile">★</button>
+          <button type="button" class="star-btn" data-val="2" role="radio" aria-checked="false" aria-label="2 étoiles">★</button>
+          <button type="button" class="star-btn" data-val="3" role="radio" aria-checked="false" aria-label="3 étoiles">★</button>
+          <button type="button" class="star-btn" data-val="4" role="radio" aria-checked="false" aria-label="4 étoiles">★</button>
+          <button type="button" class="star-btn" data-val="5" role="radio" aria-checked="false" aria-label="5 étoiles">★</button>
+        </div>
+        <div class="stars-label" id="stars-label" aria-live="polite"></div>
+        <div class="field-error">Merci de donner une note (obligatoire).</div>
+      </div>
+
+      <!-- ══ Q2 — L'enfant a-t-il aimé ══ -->
+      <div class="q-bloc" data-field="q2" role="group" aria-labelledby="q2-title">
+        <p class="q-title" id="q2-title">2. Votre enfant a-t-il aimé sa journée ?</p>
+        <div class="choices">
+          <label class="choice">
+            <input type="radio" name="q2_aime" value="beaucoup" />
+            <span class="dot" aria-hidden="true"></span>
+            <span class="choice-text">Beaucoup</span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="q2_aime" value="plutot" />
+            <span class="dot" aria-hidden="true"></span>
+            <span class="choice-text">Plutôt</span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="q2_aime" value="pas_vraiment" />
+            <span class="dot" aria-hidden="true"></span>
+            <span class="choice-text">Pas vraiment</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ══ Q3 — Le parent a-t-il aimé ══ -->
+      <div class="q-bloc" data-field="q3" role="group" aria-labelledby="q3-title">
+        <p class="q-title" id="q3-title">3. Et vous, avez-vous aimé votre journée ?</p>
+        <div class="choices">
+          <label class="choice">
+            <input type="radio" name="q3_parent_aime" value="beaucoup" />
+            <span class="dot" aria-hidden="true"></span>
+            <span class="choice-text">Beaucoup</span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="q3_parent_aime" value="plutot" />
+            <span class="dot" aria-hidden="true"></span>
+            <span class="choice-text">Plutôt</span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="q3_parent_aime" value="pas_vraiment" />
+            <span class="dot" aria-hidden="true"></span>
+            <span class="choice-text">Pas vraiment</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ══ Q4 — Ce qu'on a aimé ══ -->
+      <div class="q-bloc" data-field="q4">
+        <label class="txt-label" for="q4">4. Ce que vous avez aimé le plus <span class="opt">(facultatif)</span></label>
+        <textarea id="q4" name="q4_aime_txt" rows="3" maxlength="2000"
+                  placeholder="Ex : l'ambiance, l'organisation, la pizza…"></textarea>
+      </div>
+
+      <!-- ══ Q5 — Encore plus wow ══ -->
+      <div class="q-bloc" data-field="q5">
+        <label class="txt-label" for="q5">5. Pour rendre l'événement encore plus <strong>wow</strong>, que pourrait-on faire ? <span class="opt">(facultatif)</span></label>
+        <textarea id="q5" name="q5_ameliorer_txt" rows="3" maxlength="2000"
+                  placeholder="Vos idées, petites ou grandes…"></textarea>
+      </div>
+
+      <button type="submit" class="btn" id="submit-btn">
+        Envoyer mon avis →
+      </button>
+    </form>
+
+  </div><!-- /.card -->
+
+  <!-- Confirmation -->
+  <div class="merci" id="merci" role="status">
+    <div class="check" aria-hidden="true">✅</div>
+    <h2>Merci !</h2>
+    <p>
+      Votre avis a bien été reçu.<br>
+      Il nous aide directement à préparer une <strong>Édition 04</strong> encore meilleure.
+    </p>
+    <p style="font-size:.92rem;">
+      On le sait, la journée a été longue : pour limiter les pépins techniques, on a fait le choix d'une seule surface.<br>
+      Merci pour votre patience — et à la prochaine !
+    </p>
+    <button class="btn-secondary" onclick="location.reload()">
+      Répondre à nouveau
+    </button>
+  </div>
+
+  <footer>
+    Académie d'arts martiaux familial · Rouyn-Noranda
+  </footer>
+  <a class="back-link" href="index.html">← Retour au site</a>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const EDITION = 3;
+      const API_URL = 'https://leads.srv1302277.hstgr.cloud/survey/submit';
+
+      // ── Refs ──
+      const form        = document.getElementById('survey-form');
+      const globalErr   = document.getElementById('global-error');
+      const submitBtn   = document.getElementById('submit-btn');
+      const merci       = document.getElementById('merci');
+      const formCard    = document.getElementById('form-card');
+      const hero        = document.getElementById('hero');
+      const stars       = document.getElementById('stars');
+      const starsLabel  = document.getElementById('stars-label');
+      const starBtns    = Array.prototype.slice.call(stars.querySelectorAll('.star-btn'));
+
+      const STAR_TXT = { 1: 'À revoir', 2: 'Bof', 3: 'Correct', 4: 'Très bien', 5: 'Excellent !' };
+
+      let q1Note = null;
+
+      // ── Étoiles Q1 ──
+      function setStars(n) {
+        q1Note = n;
+        starBtns.forEach(function (b) {
+          const v = parseInt(b.dataset.val, 10);
+          const on = v <= n;
+          b.classList.toggle('on', on);
+          b.setAttribute('aria-checked', v === n ? 'true' : 'false');
+        });
+        starsLabel.textContent = STAR_TXT[n] || '';
+        clearFieldErr('q1');
+      }
+      starBtns.forEach(function (b) {
+        b.addEventListener('click', function () { setStars(parseInt(b.dataset.val, 10)); });
+        b.addEventListener('keydown', function (e) {
+          const v = parseInt(b.dataset.val, 10);
+          if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const nv = Math.min(5, v + 1);
+            setStars(nv); starBtns[nv - 1].focus();
+          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            const nv = Math.max(1, v - 1);
+            setStars(nv); starBtns[nv - 1].focus();
+          }
+        });
+      });
+
+      // ── Validation helpers ──
+      function setFieldErr(name) {
+        const g = form.querySelector('[data-field="' + name + '"]');
+        if (g) g.classList.add('has-error');
+      }
+      function clearFieldErr(name) {
+        const g = form.querySelector('[data-field="' + name + '"]');
+        if (g) g.classList.remove('has-error');
+      }
+      function clearAll() {
+        form.querySelectorAll('[data-field]').forEach(function (g) { g.classList.remove('has-error'); });
+        globalErr.style.display = 'none';
+        globalErr.textContent = '';
+      }
+
+      // ── Soumission ──
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        // Honeypot : si rempli, on simule un succès silencieux sans rien envoyer
+        if (form.querySelector('[name="bot-field"]').value) {
+          formCard.style.display = 'none';
+          hero.style.display = 'none';
+          merci.style.display = 'block';
+          return;
+        }
+        clearAll();
+
+        // Validation : q1_note obligatoire
+        if (!q1Note || q1Note < 1 || q1Note > 5) {
+          setFieldErr('q1');
+          const g = form.querySelector('[data-field="q1"]');
+          g.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          starBtns[0].focus();
+          return;
+        }
+
+        const q2 = (form.querySelector('[name="q2_aime"]:checked') || {}).value || null;
+        const q3 = (form.querySelector('[name="q3_parent_aime"]:checked') || {}).value || null;
+        const q4 = (document.getElementById('q4').value || '').trim();
+        const q5 = (document.getElementById('q5').value || '').trim();
+
+        const payload = {
+          edition:          EDITION,
+          q1_note:          q1Note,
+          q2_aime:          q2,
+          q3_parent_aime:   q3,
+          q4_aime_txt:      q4 || null,
+          q5_ameliorer_txt: q5 || null,
+          bot_field:        ''
+        };
+
+        submitBtn.textContent = 'Envoi en cours…';
+        submitBtn.disabled = true;
+
+        try {
+          const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (res.status === 429) throw new Error('RATE_LIMIT');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+
+          hero.style.display = 'none';
+          formCard.style.display = 'none';
+          merci.style.display = 'block';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (err) {
+          submitBtn.textContent = 'Envoyer mon avis →';
+          submitBtn.disabled = false;
+          if (err.message === 'RATE_LIMIT') {
+            globalErr.textContent = 'Vous avez déjà répondu plusieurs fois récemment. Attendez un moment et réessayez.';
+          } else {
+            globalErr.textContent = 'Une erreur est survenue. Vérifiez votre connexion et réessayez, ou contactez-nous directement.';
+          }
+          globalErr.style.display = 'block';
+          globalErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          console.error(err);
+        }
+      });
+
+    })();
+  </script>
+
+</body>
+</html>
