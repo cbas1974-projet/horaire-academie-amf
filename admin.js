@@ -193,7 +193,7 @@ async function loadFromSupabase() {
     contact: {
       email: 'info@academie-amf.com',
       phone: '',
-      address: '129 avenue Principale, Rouyn-Noranda (Québec) J9X 4P3 — Sous-sol, 3e studio',
+      address: '245 Rue Gamble Ouest, Rouyn-Noranda, QC J9X 2R8',
     },
     announcements: sessAnn.map(a => ({
       id: a.id,
