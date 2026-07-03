@@ -12,7 +12,7 @@ const JUNIOR_COMBATIVE_URL = 'http://localhost:5173';
 
 // ── Supabase Config ──────────────────────────────────────────
 const SUPABASE_URL  = 'https://enkwnelkwlvlyjvbwyzq.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVua3duZWxrd2x2bHlqdmJ3eXpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMzU1MjgsImV4cCI6MjA4NDYxMTUyOH0.SzvyfEQGjfav927--cYQZVF8jJ47B6V9jHrNh6KuT6M';
+const SUPABASE_ANON = 'sb_publishable_1YPnPq0t2cGBC9Mbs9VJyg_OHx7hyFS';
 
 let currentSessionId = null; // set on load
 
