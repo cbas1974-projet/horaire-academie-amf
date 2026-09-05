@@ -279,7 +279,7 @@
       contact: {
         email: 'info@academie-amf.com',
         phone: '',
-        address: '245 Rue Gamble Ouest, Rouyn-Noranda, QC J9X 2R8',
+        address: '245 Rue Gamble Ouest, studio 150A, Rouyn-Noranda, QC J9X 2R8',
       },
       announcements: sessAnnouncements.map(a => ({
         id: a.id,
