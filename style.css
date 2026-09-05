@@ -854,59 +854,222 @@ body {
 @page { size: letter landscape; margin: 0.6cm 0.8cm; }
 
 @media print {
+
+  /* --- Forcer l'impression des aplats de couleur (sinon le navigateur sort tout en blanc) --- */
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   body {
     background: white !important;
-    color: black !important;
+    color: #111 !important;
     font-size: 11pt;
   }
 
-  /* --- Tenir sur UNE page paysage : en-tête compact, pied de page masqué --- */
+  /* --- Ce qui ne s'imprime pas --- */
   .skip-link,
   #contact,
   #announcement-section,
-  .session-nav-btn {
+  .session-nav-btn,
+  .view-toggle,
+  .countdown-bar,
+  .filter-btn,
+  .day-nav-btn,
+  .cta-button,
+  .week-nav,
+  .month-nav,
+  footer,
+  .no-print {
     display: none !important;
   }
 
-  header.hero-gradient > div { padding: 0.15rem 0 0.35rem !important; }
+  /* ============================================================
+     EN-TETE IMPRIME — compact et coloré
+     ============================================================ */
+  header.hero-gradient {
+    background: #fbf6e6 !important;
+    border-bottom: 3px solid #c9a227 !important;
+  }
+  header.hero-gradient > div {
+    padding: 0.35rem 0.5rem 0.4rem !important;
+    max-width: none !important;
+  }
   header.hero-gradient .flex-1 { text-align: left !important; }
   header.hero-gradient .justify-center { justify-content: flex-start !important; }
   header.hero-gradient .items-center { align-items: flex-start !important; }
-  .hero-title { font-size: 1.3rem !important; line-height: 1.1 !important; background: none !important; }
-  .hero-accent-line { display: none !important; }
-  header.hero-gradient p { color: #222 !important; }
-  header.hero-gradient .mt-5 { margin-top: 0.1rem !important; font-size: 1rem !important; }
+
+  .hero-title {
+    background: none !important;
+    -webkit-text-fill-color: #8a6d0f !important;
+    color: #8a6d0f !important;
+    font-size: 1.35rem !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.01em;
+  }
+
+  .hero-accent-line {
+    display: block !important;
+    background: #c9a227 !important;
+    height: 3px !important;
+    width: 64px !important;
+    margin: 0.25rem 0 0.3rem !important;
+  }
+
+  header.hero-gradient .mt-5 {
+    margin-top: 0 !important;
+    font-size: 1.02rem !important;
+    color: #1a1a1a !important;
+    font-weight: 700 !important;
+  }
   header.hero-gradient .mt-1 { margin-top: 0 !important; }
-  #print-session-dates { display: block !important; margin-top: 0.1rem; color: #333 !important; }
-  #schedule-legend { margin-top: 0.25rem !important; }
-  #schedule-legend * { color: #222 !important; }
+  header.hero-gradient p { color: #333 !important; }
 
-  main#horaire { padding: 0.3rem 0 0 !important; max-width: none !important; }
+  #print-session-dates {
+    display: block !important;
+    margin-top: 0.15rem;
+    color: #6b5a10 !important;
+    font-weight: 600;
+    line-height: 1.35;
+  }
 
+  #last-updated { color: #777 !important; font-size: 0.72rem !important; }
+
+  /* Légende : pastilles PLEINES (plus des ronds vides) */
+  #schedule-legend { margin-top: 0.3rem !important; gap: 1rem !important; }
+  #schedule-legend span { color: #222 !important; }
+  .legend-dot {
+    border: 1px solid rgba(0, 0, 0, 0.35) !important;
+    width: 11px !important;
+    height: 11px !important;
+  }
+  /* Superkids est blanc sur le theme sombre : invisible sur papier -> cyan a l'impression */
+  .legend-dot[data-discipline="superkids"] { background-color: #22d3ee !important; }
+  .legend-dot[data-discipline="jiujitsu"] { background-color: #c9a227 !important; }
+
+  main#horaire { padding: 0.35rem 0 0 !important; max-width: none !important; }
+
+  /* ============================================================
+     GRILLE SEMAINE IMPRIMEE
+     ============================================================ */
+  .week-view-wrapper { overflow: visible !important; }
   .week-grid {
     min-width: 0 !important;
     grid-template-columns: 44px repeat(7, 1fr) !important;
+    transform: none !important;
   }
+
   .week-day-header {
     position: static !important;
-    padding: 0.1rem 0.1rem 0.25rem !important;
-    font-size: 0.6rem !important;
+    padding: 0.2rem 0.1rem 0.25rem !important;
+    font-size: 0.62rem !important;
+    color: #6b5a10 !important;
+    background: #f6efd9 !important;
+    border-bottom: 2px solid #c9a227 !important;
+    border-right: 1px solid #e5ddc4 !important;
   }
-  .week-day-header .day-class-count { font-size: 0.5rem !important; }
-  .timeline-block { padding: 2px 4px !important; border-radius: 4px !important; }
-  .tb-time { font-size: 0.5rem !important; }
-  .tb-name { font-size: 0.56rem !important; line-height: 1.1 !important; }
-  .tb-age  { font-size: 0.5rem !important; }
+  .week-day-header .day-date-num,
+  .week-day-header .day-class-count {
+    color: #8a7318 !important;
+    font-size: 0.5rem !important;
+  }
 
-  .hero-gradient {
-    background: none !important;
-    border-bottom: 2px solid #333 !important;
+  .week-hour-line { border-top-color: #e8e8e8 !important; }
+  .week-hour-line.full { border-top-color: #c8c8c8 !important; }
+  .timeline-tick-label { color: #555 !important; font-weight: 600; }
+  .week-col-wrapper { border-left: 1px solid #e0e0e0 !important; }
+  .week-col-today { background: none !important; }
+  .week-col-repos { color: #bbb !important; }
+
+  /* --- Blocs de cours : aplat coloré + barre de couleur à gauche --- */
+  .timeline-block {
+    border: 1px solid rgba(0, 0, 0, 0.16) !important;
+    border-left-width: 4px !important;
+    border-left-style: solid !important;
+    border-radius: 4px !important;
+    padding: 2px 4px 2px 5px !important;
+    box-shadow: none !important;
+    transform: none !important;
   }
 
-  .hero-title {
-    -webkit-text-fill-color: black !important;
-    color: black !important;
+  /* Jiu-Jitsu — or */
+  .timeline-block[data-discipline="jiujitsu"] {
+    background: #fdf3cf !important;
+    border-left-color: #c9a227 !important;
   }
+  .timeline-block[data-discipline="jiujitsu"] .tb-name,
+  .timeline-block[data-discipline="jiujitsu"] .tb-time,
+  .timeline-block[data-discipline="jiujitsu"] .tb-age { color: #5c4a08 !important; }
+
+  /* Jiu-Jitsu ados — orange */
+  .timeline-block[data-discipline="jiujitsu"][data-type="Ado"] {
+    background: #fde5cd !important;
+    border-left-color: #ea580c !important;
+  }
+  .timeline-block[data-discipline="jiujitsu"][data-type="Ado"] .tb-name,
+  .timeline-block[data-discipline="jiujitsu"][data-type="Ado"] .tb-time,
+  .timeline-block[data-discipline="jiujitsu"][data-type="Ado"] .tb-age { color: #7c2d12 !important; }
+
+  /* Autodéfense femmes — rose */
+  .timeline-block[data-type="Femmes"] {
+    background: #fbdcec !important;
+    border-left-color: #db2777 !important;
+  }
+  .timeline-block[data-type="Femmes"] .tb-name,
+  .timeline-block[data-type="Femmes"] .tb-time,
+  .timeline-block[data-type="Femmes"] .tb-age { color: #831843 !important; }
+
+  /* Muay Thai — rouge */
+  .timeline-block[data-discipline="muaythai"] {
+    background: #fbd9d9 !important;
+    border-left-color: #dc2626 !important;
+  }
+  .timeline-block[data-discipline="muaythai"] .tb-name,
+  .timeline-block[data-discipline="muaythai"] .tb-time,
+  .timeline-block[data-discipline="muaythai"] .tb-age { color: #7f1d1d !important; }
+
+  /* Superkids — cyan */
+  .timeline-block[data-discipline="superkids"] {
+    background: #cdf2fa !important;
+    border-left-color: #0891b2 !important;
+  }
+  .timeline-block[data-discipline="superkids"] .tb-name,
+  .timeline-block[data-discipline="superkids"] .tb-time,
+  .timeline-block[data-discipline="superkids"] .tb-age { color: #124e5e !important; }
+
+  /* Gracie — bleu royal */
+  .timeline-block[data-discipline="gracie"] {
+    background: #d6e3fc !important;
+    border-left-color: #2563eb !important;
+  }
+  .timeline-block[data-discipline="gracie"] .tb-name,
+  .timeline-block[data-discipline="gracie"] .tb-time,
+  .timeline-block[data-discipline="gracie"] .tb-age { color: #1e3a8a !important; }
+
+  /* Superkids + Jiu-Jitsu mixte */
+  .timeline-block.mixed-sk-jj {
+    background: linear-gradient(135deg, #cdf2fa 45%, #fdf3cf 55%) !important;
+  }
+
+  .tb-time { font-size: 0.5rem !important; opacity: 1 !important; font-weight: 700 !important; }
+  .tb-name { font-size: 0.57rem !important; line-height: 1.12 !important; font-weight: 700 !important; }
+  .tb-age { font-size: 0.5rem !important; opacity: 0.85 !important; }
+
+  /* Le logo en filigrane reste discret pour ne pas brouiller le texte */
+  .week-block-watermark { opacity: 0.10 !important; }
+
+  /* ============================================================
+     AUTRES VUES (jour / mois / session)
+     ============================================================ */
+  #view-semaine.hidden,
+  #view-jour.hidden,
+  #view-mois.hidden,
+  #view-session.hidden { display: none !important; }
+
+  #view-semaine:not(.hidden),
+  #view-jour:not(.hidden),
+  #view-mois:not(.hidden),
+  #view-session:not(.hidden) { display: block !important; }
 
   .day-card-v2 {
     background: white !important;
@@ -917,139 +1080,27 @@ body {
     transform: none !important;
   }
 
-  .dc-badge.jiujitsu  { background: #f5f0d0 !important; color: #6b5a10 !important; }
-  .dc-badge.muaythai  { background: #fde2e2 !important; color: #991b1b !important; }
-  .dc-badge.superkids { background: #d1fafe !important; color: #155e75 !important; }
-  .dc-badge.gracie    { background: #dbeafe !important; color: #1e40af !important; }
+  .dc-badge.jiujitsu { background: #fdf3cf !important; color: #5c4a08 !important; }
+  .dc-badge.muaythai { background: #fbd9d9 !important; color: #7f1d1d !important; }
+  .dc-badge.superkids { background: #cdf2fa !important; color: #124e5e !important; }
+  .dc-badge.gracie { background: #d6e3fc !important; color: #1e3a8a !important; }
 
-  .dc-left-border.jiujitsu  { background: #b8941f !important; }
-  .dc-left-border.muaythai  { background: #991b1b !important; }
-  .dc-left-border.superkids { background: #0e7490 !important; }
-  .dc-left-border.gracie    { background: #1e40af !important; }
+  .dc-left-border.jiujitsu { background: #c9a227 !important; }
+  .dc-left-border.muaythai { background: #dc2626 !important; }
+  .dc-left-border.superkids { background: #0891b2 !important; }
+  .dc-left-border.gracie { background: #2563eb !important; }
 
-  .dc-name    { color: black !important; }
-  .dc-age     { color: #444 !important; }
-  .dc-desc    { color: #666 !important; }
-  .dc-time    { color: #555 !important; }
+  .dc-name { color: #111 !important; }
+  .dc-age { color: #444 !important; }
+  .dc-desc { color: #666 !important; }
+  .dc-time { color: #555 !important; }
 
-  .view-toggle,
-  .announcement-bar,
-  .countdown-bar,
-  .filter-btn,
-  .day-nav-btn,
-  .cta-button,
-  footer,
-  .no-print {
-    display: none !important;
-  }
+  .month-grid { border: 1px solid #ccc !important; }
+  .month-cell-day { background: white !important; border-color: #ccc !important; color: #111 !important; }
+  .session-stat-card { background: white !important; border: 1px solid #ccc !important; color: #111 !important; }
+  .session-stat-value { color: #111 !important; }
 
-  /* Print whichever view is currently active (not hidden) */
-  #view-semaine.hidden,
-  #view-jour.hidden,
-  #view-mois.hidden,
-  #view-session.hidden {
-    display: none !important;
-  }
-
-  #view-semaine:not(.hidden),
-  #view-jour:not(.hidden),
-  #view-mois:not(.hidden),
-  #view-session:not(.hidden) {
-    display: block !important;
-  }
-
-  /* Week view print styles */
-  .week-view-wrapper {
-    overflow: visible !important;
-    -webkit-overflow-scrolling: auto;
-  }
-
-  .week-nav {
-    display: none !important;
-  }
-
-  .week-grid {
-    transform: none !important;
-  }
-
-  .timeline-block {
-    color: black !important;
-    border: 1px solid #999 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  .timeline-block[data-discipline="jiujitsu"] {
-    background: rgba(201, 162, 39, 0.15) !important;
-  }
-  .timeline-block[data-discipline="muaythai"] {
-    background: rgba(220, 38, 38, 0.15) !important;
-  }
-  .timeline-block[data-discipline="superkids"] {
-    background: rgba(34, 211, 238, 0.12) !important;
-  }
-  .timeline-block[data-discipline="gracie"] {
-    background: rgba(37, 99, 235, 0.15) !important;
-  }
-  .timeline-block.mixed-sk-jj {
-    background: linear-gradient(135deg, rgba(34, 211, 238, 0.15) 45%, rgba(201, 162, 39, 0.15) 55%) !important;
-  }
-
-  .tb-time, .tb-name, .tb-age {
-    color: #222 !important;
-  }
-
-  .week-block-watermark {
-    opacity: 0.18 !important;
-  }
-
-  .week-day-header {
-    color: black !important;
-    background: #f5f5f5 !important;
-    border: 1px solid #ccc !important;
-  }
-
-  .week-hour-line { border-color: #ddd !important; }
-  .week-hour-line.full { border-color: #bbb !important; }
-  .timeline-tick-label { color: #666 !important; }
-
-  .hero-accent-line {
-    background: #333 !important;
-  }
-
-  .legend-dot {
-    border: 1px solid #333;
-  }
-
-  a {
-    color: black !important;
-    text-decoration: underline;
-  }
-
-  /* Month view print */
-  .month-nav {
-    display: none !important;
-  }
-
-  .month-grid {
-    border: 1px solid #ccc !important;
-  }
-
-  .month-cell-day {
-    background: white !important;
-    border-color: #ccc !important;
-    color: black !important;
-  }
-
-  .session-stat-card {
-    background: white !important;
-    border: 1px solid #ccc !important;
-    color: black !important;
-  }
-
-  .session-stat-value {
-    color: black !important;
-  }
+  a { color: #111 !important; text-decoration: underline; }
 }
 
 /* ============================================================

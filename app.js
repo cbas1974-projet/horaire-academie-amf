@@ -549,7 +549,7 @@
 
     const items = Object.entries(disciplines).map(([key, disc]) => `
       <div class="flex items-center gap-2" role="listitem">
-        <span class="legend-dot" style="background-color:${esc(disc.color)};" aria-hidden="true"></span>
+        <span class="legend-dot" data-discipline="${esc(key)}" style="background-color:${esc(disc.color)};" aria-hidden="true"></span>
         <span class="text-sm text-gray-300">${esc(disc.label)}</span>
       </div>`);
 
