@@ -591,24 +591,63 @@
     // Ligne imprimée seulement : dates de session + congés + contact (le bas de page est masqué à l'impression)
     const printLine = document.getElementById('print-session-dates');
     if (printLine) {
+      // "1 décembre" se dit "1er décembre"
+      const premier = (s) => s.replace(/^1(?= )/, '1er');
       const fmtLong = (d) => d
-        ? new Date(d + 'T00:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })
+        ? premier(new Date(d + 'T00:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' }))
         : '';
       const fmtShort = (d) => d
-        ? new Date(d + 'T00:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' })
+        ? premier(new Date(d + 'T00:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' }))
         : '';
-      const parts = [];
-      if (data.sessionStart && data.sessionEnd) parts.push(`Du ${fmtLong(data.sessionStart)} au ${fmtLong(data.sessionEnd)}`);
-      const hol = (data.holidays || []).slice().sort((a, b) => a.date.localeCompare(b.date));
-      if (hol.length) {
-        parts.push('Congés : ' + hol.map(h => {
-          const when = h.endDate && h.endDate !== h.date ? `${fmtShort(h.date)} au ${fmtShort(h.endDate)}` : fmtShort(h.date);
-          return h.name ? `${when} (${h.name})` : when;
-        }).join(', '));
+
+      // Couleur de la puce selon la discipline nommée dans la plage
+      const rangeKind = (name) => {
+        const n = (name || '').toLowerCase();
+        if (n.includes('muay')) return 'muaythai';
+        // Le jiu-jitsu gagne : la plage principale s'appelle souvent
+        // "Jiu-Jitsu, Gracie & Superkids" et doit rester dorée.
+        if (n.includes('jitsu') || n.includes('jiu')) return 'jiujitsu';
+        if (n.includes('superkid')) return 'superkids';
+        if (n.includes('gracie')) return 'gracie';
+        return 'jiujitsu';
+      };
+
+      const rows = [];
+      const ranges = (data.dateRanges || []).slice().sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+      if (ranges.length) {
+        // Une puce par période : c'est ici qu'on voit que le Muay Thai ne suit pas les autres
+        ranges.forEach(r => {
+          rows.push(`<li data-kind="${rangeKind(r.name)}">
+            <span class="psd-label">${esc(r.name)}</span>
+            <span class="psd-dates">${fmtShort(r.startDate)} au ${fmtLong(r.endDate)}</span>
+          </li>`);
+        });
+      } else if (data.sessionStart && data.sessionEnd) {
+        rows.push(`<li data-kind="jiujitsu">
+          <span class="psd-label">Session</span>
+          <span class="psd-dates">${fmtShort(data.sessionStart)} au ${fmtLong(data.sessionEnd)}</span>
+        </li>`);
       }
-      if (data.contact && data.contact.address) parts.push(data.contact.address);
-      parts.push('info@academie-amf.com');
-      printLine.textContent = parts.join('  ·  ');
+
+      const hol = (data.holidays || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+      hol.forEach(h => {
+        const when = h.endDate && h.endDate !== h.date
+          ? `${fmtShort(h.date)} au ${fmtShort(h.endDate)}`
+          : fmtShort(h.date);
+        rows.push(`<li data-kind="conge">
+          <span class="psd-tag">pas de cours</span>
+          <span class="psd-label">${h.name ? esc(h.name) : 'Congé'}</span>
+          <span class="psd-dates">${when}</span>
+        </li>`);
+      });
+
+      const infos = [];
+      if (data.contact && data.contact.address) infos.push(esc(data.contact.address));
+      infos.push('info@academie-amf.com');
+      rows.push(`<li data-kind="info"><span class="psd-dates">${infos.join('&nbsp; · &nbsp;')}</span></li>`);
+
+      printLine.innerHTML = rows.join('');
     }
 
     // Contact phone/address

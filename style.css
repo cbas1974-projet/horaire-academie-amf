@@ -925,13 +925,64 @@ body {
   header.hero-gradient .mt-1 { margin-top: 0 !important; }
   header.hero-gradient p { color: #333 !important; }
 
+  /* Les dates : une puce par periode, coloree comme sa discipline.
+     Le Muay Thai ne commence ni ne finit avec les autres -> il doit sauter aux yeux. */
+  #session-date-ranges-header { display: none !important; }
+
   #print-session-dates {
     display: block !important;
-    margin-top: 0.15rem;
-    color: #6b5a10 !important;
-    font-weight: 600;
-    line-height: 1.35;
+    margin: 0.3rem 0 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+    columns: 2;
+    column-gap: 1.6rem;
   }
+
+  #print-session-dates li {
+    break-inside: avoid;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 1.5px 0 1.5px 0.7rem;
+    border-left: 3px solid #c9a227;
+    margin-bottom: 2px;
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+
+  #print-session-dates .psd-label {
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  #print-session-dates .psd-label::after { content: ' :'; }
+  #print-session-dates .psd-dates { font-weight: 600; }
+
+  #print-session-dates .psd-tag {
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0 4px;
+    border-radius: 3px;
+    background: #fbd9d9;
+    color: #7f1d1d;
+  }
+
+  /* Codes de couleur du site */
+  #print-session-dates li[data-kind="jiujitsu"]  { border-left-color: #c9a227; color: #5c4a08 !important; }
+  #print-session-dates li[data-kind="muaythai"]  { border-left-color: #dc2626; color: #7f1d1d !important; }
+  #print-session-dates li[data-kind="superkids"] { border-left-color: #0891b2; color: #124e5e !important; }
+  #print-session-dates li[data-kind="gracie"]    { border-left-color: #2563eb; color: #1e3a8a !important; }
+  #print-session-dates li[data-kind="conge"]     { border-left-color: #dc2626; color: #7f1d1d !important; }
+
+  /* Adresse et courriel : bleu de la palette, pas une date */
+  #print-session-dates li[data-kind="info"] {
+    column-span: all;
+    border-left-color: #2563eb;
+    color: #1e3a8a !important;
+    margin-top: 2px;
+  }
+  #print-session-dates li[data-kind="info"] .psd-dates { font-weight: 700; }
 
   #last-updated { color: #777 !important; font-size: 0.72rem !important; }
 
