@@ -872,7 +872,7 @@ body {
   header.hero-gradient .flex-1 { text-align: left !important; }
   header.hero-gradient .justify-center { justify-content: flex-start !important; }
   header.hero-gradient .items-center { align-items: flex-start !important; }
-  .hero-title { font-size: 1.3rem !important; line-height: 1.1 !important; }
+  .hero-title { font-size: 1.3rem !important; line-height: 1.1 !important; background: none !important; }
   .hero-accent-line { display: none !important; }
   header.hero-gradient p { color: #222 !important; }
   header.hero-gradient .mt-5 { margin-top: 0.1rem !important; font-size: 1rem !important; }

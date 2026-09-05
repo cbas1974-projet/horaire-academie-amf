@@ -28,7 +28,7 @@
   const TIMELINE_PAD_BEFORE = 15; // minutes before first class
   const TIMELINE_PAD_AFTER  = 15; // minutes after last class
   const HOUR_HEIGHT_SCREEN  = 110; // pixels per 60 minutes in week view (écran)
-  const HOUR_HEIGHT_PRINT   = 62;  // compressé à l'impression → tient sur UNE page paysage
+  const HOUR_HEIGHT_PRINT   = 80;  // compressé à l'impression → tient sur UNE page paysage
   let   HOUR_HEIGHT_PX      = HOUR_HEIGHT_SCREEN;
 
   // Discipline → logo file (in logos/ folder)
