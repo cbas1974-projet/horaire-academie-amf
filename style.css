@@ -888,8 +888,8 @@ body {
      EN-TETE IMPRIME — compact et coloré
      ============================================================ */
   header.hero-gradient {
-    background: #fbf6e6 !important;
-    border-bottom: 3px solid #c9a227 !important;
+    background: #eef3fd !important;
+    border-bottom: 3px solid #2563eb !important;
   }
   header.hero-gradient > div {
     padding: 0.35rem 0.5rem 0.4rem !important;
@@ -901,8 +901,8 @@ body {
 
   .hero-title {
     background: none !important;
-    -webkit-text-fill-color: #8a6d0f !important;
-    color: #8a6d0f !important;
+    -webkit-text-fill-color: #2563eb !important;
+    color: #2563eb !important;
     font-size: 1.35rem !important;
     line-height: 1.05 !important;
     letter-spacing: -0.01em;
@@ -910,7 +910,7 @@ body {
 
   .hero-accent-line {
     display: block !important;
-    background: #c9a227 !important;
+    background: #2563eb !important;
     height: 3px !important;
     width: 64px !important;
     margin: 0.25rem 0 0.3rem !important;
@@ -919,7 +919,7 @@ body {
   header.hero-gradient .mt-5 {
     margin-top: 0 !important;
     font-size: 1.02rem !important;
-    color: #1a1a1a !important;
+    color: #1e3a8a !important;
     font-weight: 700 !important;
   }
   header.hero-gradient .mt-1 { margin-top: 0 !important; }
@@ -1014,14 +1014,14 @@ body {
     position: static !important;
     padding: 0.2rem 0.1rem 0.25rem !important;
     font-size: 0.62rem !important;
-    color: #6b5a10 !important;
-    background: #f6efd9 !important;
-    border-bottom: 2px solid #c9a227 !important;
-    border-right: 1px solid #e5ddc4 !important;
+    color: #1e3a8a !important;
+    background: #eef3fd !important;
+    border-bottom: 2px solid #2563eb !important;
+    border-right: 1px solid #d6e3fc !important;
   }
   .week-day-header .day-date-num,
   .week-day-header .day-class-count {
-    color: #8a7318 !important;
+    color: #3b5fc0 !important;
     font-size: 0.5rem !important;
   }
 
