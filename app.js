@@ -20,7 +20,7 @@
     jiujitsu:  { label: "Jiu-Jitsu d'autodéfense", color: '#eab308' },
     muaythai:  { label: 'Muay Thai',               color: '#dc2626' },
     superkids: { label: 'Programme Superkids',      color: '#ffffff' },
-    gracie:    { label: 'Gracie Jiu-Jitsu',         color: '#2563eb' },
+    gracie:    { label: 'Mukei Jiu-Jitsu',          color: '#2563eb' },
   };
 
   // Timeline bounds (HH:MM) — schedule data drives the min/max

@@ -49,7 +49,7 @@ const DISCIPLINES = {
   jiujitsu:  { label: "Jiu-Jitsu d'autodéfense", color: '#c9a227' },
   muaythai:  { label: 'Muay Thai',               color: '#dc2626' },
   superkids: { label: 'Programme Superkids',      color: '#22d3ee' },
-  gracie:    { label: 'Gracie Jiu-Jitsu',         color: '#2563eb' },
+  gracie:    { label: 'Mukei Jiu-Jitsu',          color: '#2563eb' },
 };
 
 const EVENT_TYPE_LABELS = {
