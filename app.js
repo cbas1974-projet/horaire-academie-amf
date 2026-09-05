@@ -28,7 +28,7 @@
   const TIMELINE_PAD_BEFORE = 15; // minutes before first class
   const TIMELINE_PAD_AFTER  = 15; // minutes after last class
   const HOUR_HEIGHT_SCREEN  = 110; // pixels per 60 minutes in week view (écran)
-  const HOUR_HEIGHT_PRINT   = 80;  // compressé à l'impression → tient sur UNE page paysage
+  const HOUR_HEIGHT_PRINT   = 72;  // compressé à l'impression → tient sur UNE page paysage
   let   HOUR_HEIGHT_PX      = HOUR_HEIGHT_SCREEN;
 
   // Discipline → logo file (in logos/ folder)
@@ -601,53 +601,71 @@
         : '';
 
       // Couleur de la puce selon la discipline nommée dans la plage
+      // Une plage porte souvent plusieurs disciplines ("Jiu-Jitsu, Gracie & Superkids").
+      // On compte celles qui sont nommées : une seule -> sa couleur ; plusieurs -> gris neutre,
+      // pour ne pas faire disparaître en silence la couleur des autres.
       const rangeKind = (name) => {
         const n = (name || '').toLowerCase();
-        if (n.includes('muay')) return 'muaythai';
-        // Le jiu-jitsu gagne : la plage principale s'appelle souvent
-        // "Jiu-Jitsu, Gracie & Superkids" et doit rester dorée.
-        if (n.includes('jitsu') || n.includes('jiu')) return 'jiujitsu';
-        if (n.includes('superkid')) return 'superkids';
-        if (n.includes('gracie')) return 'gracie';
+        const vus = [];
+        if (n.includes('muay')) vus.push('muaythai');
+        if (n.includes('jitsu') || n.includes('jiu')) vus.push('jiujitsu');
+        if (n.includes('superkid')) vus.push('superkids');
+        if (n.includes('gracie') && !vus.includes('jiujitsu')) vus.push('gracie');
+        if (vus.length === 1) return vus[0];
+        if (vus.length > 1) {
+          // "Jiu-Jitsu, Gracie & Superkids" = la grande période de l'académie : elle reste dorée.
+          // Toute autre combinaison est ambiguë -> neutre.
+          return vus.includes('jiujitsu') && !vus.includes('muaythai') ? 'jiujitsu' : 'mixte';
+        }
         return 'jiujitsu';
       };
 
-      const rows = [];
+      // Colonne de GAUCHE : quand chaque discipline commence et finit
+      const cours = [];
       const ranges = (data.dateRanges || []).slice().sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
       if (ranges.length) {
         // Une puce par période : c'est ici qu'on voit que le Muay Thai ne suit pas les autres
         ranges.forEach(r => {
-          rows.push(`<li data-kind="${rangeKind(r.name)}">
+          cours.push(`<li data-kind="${rangeKind(r.name)}">
             <span class="psd-label">${esc(r.name)}</span>
             <span class="psd-dates">${fmtShort(r.startDate)} au ${fmtLong(r.endDate)}</span>
           </li>`);
         });
       } else if (data.sessionStart && data.sessionEnd) {
-        rows.push(`<li data-kind="jiujitsu">
+        cours.push(`<li data-kind="jiujitsu">
           <span class="psd-label">Session</span>
           <span class="psd-dates">${fmtShort(data.sessionStart)} au ${fmtLong(data.sessionEnd)}</span>
         </li>`);
       }
 
-      const hol = (data.holidays || []).slice().sort((a, b) => a.date.localeCompare(b.date));
-      hol.forEach(h => {
+      // Colonne de DROITE : tous les congés ensemble, sous un seul titre
+      const conges = (data.holidays || []).slice().sort((a, b) => a.date.localeCompare(b.date)).map(h => {
         const when = h.endDate && h.endDate !== h.date
           ? `${fmtShort(h.date)} au ${fmtShort(h.endDate)}`
           : fmtShort(h.date);
-        rows.push(`<li data-kind="conge">
-          <span class="psd-tag">pas de cours</span>
+        return `<li data-kind="conge">
           <span class="psd-label">${h.name ? esc(h.name) : 'Congé'}</span>
           <span class="psd-dates">${when}</span>
-        </li>`);
+        </li>`;
       });
 
       const infos = [];
       if (data.contact && data.contact.address) infos.push(esc(data.contact.address));
       infos.push('info@academie-amf.com');
-      rows.push(`<li data-kind="info"><span class="psd-dates">${infos.join('&nbsp; · &nbsp;')}</span></li>`);
 
-      printLine.innerHTML = rows.join('');
+      printLine.innerHTML = `
+        <div class="psd-grid">
+          <section class="psd-bloc psd-bloc-cours">
+            <h3 class="psd-titre">Durée de la session</h3>
+            <ul>${cours.join('')}</ul>
+          </section>
+          ${conges.length ? `<section class="psd-bloc psd-bloc-conges">
+            <h3 class="psd-titre">Pas de cours</h3>
+            <ul>${conges.join('')}</ul>
+          </section>` : ''}
+        </div>
+        <p class="psd-info">${infos.join('&nbsp; · &nbsp;')}</p>`;
     }
 
     // Contact phone/address
@@ -2410,6 +2428,14 @@
       if (mq.addEventListener) mq.addEventListener('change', onChange);
       else if (mq.addListener) mq.addListener(onChange);
     } catch { /* matchMedia indisponible : beforeprint suffit */ }
+
+    // Filet de sécurité : si un navigateur n'émet ni afterprint ni le changement de
+    // matchMedia, la grille resterait compressée à l'écran jusqu'au prochain F5.
+    // La première interaction réelle la remet d'aplomb — elle ne peut pas se produire
+    // tant que la boîte de dialogue d'impression est ouverte.
+    ['pointerdown', 'keydown', 'wheel'].forEach(evt => {
+      window.addEventListener(evt, () => { if (_printMode) setPrintMode(false); }, { passive: true });
+    });
   }
 
   /* ============================================================

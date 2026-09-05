@@ -934,9 +934,30 @@ body {
     margin: 0.3rem 0 0 !important;
     padding: 0 !important;
     list-style: none !important;
-    columns: 2;
-    column-gap: 1.6rem;
   }
+
+  /* Deux blocs cote a cote : les dates de cours a gauche, TOUS les conges a droite */
+  #print-session-dates .psd-grid {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.8rem;
+  }
+  #print-session-dates .psd-bloc ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  #print-session-dates .psd-titre {
+    font-size: 0.55rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 1px 0.7rem;
+    line-height: 1.1;
+    color: #555 !important;
+  }
+  #print-session-dates .psd-bloc-conges .psd-titre { color: #b91c1c !important; }
 
   #print-session-dates li {
     break-inside: avoid;
@@ -957,15 +978,13 @@ body {
   #print-session-dates .psd-label::after { content: ' :'; }
   #print-session-dates .psd-dates { font-weight: 600; }
 
-  #print-session-dates .psd-tag {
-    font-size: 0.6rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 0 4px;
-    border-radius: 3px;
-    background: #fbd9d9;
-    color: #7f1d1d;
+  #print-session-dates .psd-info {
+    margin: 3px 0 0 0;
+    padding: 1.5px 0 1.5px 0.7rem;
+    border-left: 3px solid #2563eb;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #1e3a8a !important;
   }
 
   /* Codes de couleur du site */
@@ -974,15 +993,9 @@ body {
   #print-session-dates li[data-kind="superkids"] { border-left-color: #0891b2; color: #124e5e !important; }
   #print-session-dates li[data-kind="gracie"]    { border-left-color: #2563eb; color: #1e3a8a !important; }
   #print-session-dates li[data-kind="conge"]     { border-left-color: #dc2626; color: #7f1d1d !important; }
+  #print-session-dates li[data-kind="mixte"]     { border-left-color: #555;    color: #333 !important; }
 
-  /* Adresse et courriel : bleu de la palette, pas une date */
-  #print-session-dates li[data-kind="info"] {
-    column-span: all;
-    border-left-color: #2563eb;
-    color: #1e3a8a !important;
-    margin-top: 2px;
-  }
-  #print-session-dates li[data-kind="info"] .psd-dates { font-weight: 700; }
+  /* Adresse et courriel : voir .psd-info ci-dessus */
 
   #last-updated { color: #777 !important; font-size: 0.72rem !important; }
 
@@ -1106,8 +1119,8 @@ body {
   .tb-name { font-size: 0.57rem !important; line-height: 1.12 !important; font-weight: 700 !important; }
   .tb-age { font-size: 0.5rem !important; opacity: 0.85 !important; }
 
-  /* Le logo en filigrane reste discret pour ne pas brouiller le texte */
-  .week-block-watermark { opacity: 0.10 !important; }
+  /* Filigrane des logos : 0.10 etait trop pale a l'impression (ecran = 0.37) */
+  .week-block-watermark { opacity: 0.25 !important; }
 
   /* ============================================================
      AUTRES VUES (jour / mois / session)
