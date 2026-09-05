@@ -27,7 +27,9 @@
   // with padding added at runtime.
   const TIMELINE_PAD_BEFORE = 15; // minutes before first class
   const TIMELINE_PAD_AFTER  = 15; // minutes after last class
-  const HOUR_HEIGHT_PX      = 110; // pixels per 60 minutes in week view
+  const HOUR_HEIGHT_SCREEN  = 110; // pixels per 60 minutes in week view (écran)
+  const HOUR_HEIGHT_PRINT   = 62;  // compressé à l'impression → tient sur UNE page paysage
+  let   HOUR_HEIGHT_PX      = HOUR_HEIGHT_SCREEN;
 
   // Discipline → logo file (in logos/ folder)
   const DISC_LOGOS = {
@@ -584,6 +586,29 @@
             ${esc(r.name)} : ${formatShort(r.startDate)} — ${formatShort(r.endDate)}</p>`;
         }).join('');
       }
+    }
+
+    // Ligne imprimée seulement : dates de session + congés + contact (le bas de page est masqué à l'impression)
+    const printLine = document.getElementById('print-session-dates');
+    if (printLine) {
+      const fmtLong = (d) => d
+        ? new Date(d + 'T00:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })
+        : '';
+      const fmtShort = (d) => d
+        ? new Date(d + 'T00:00:00').toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' })
+        : '';
+      const parts = [];
+      if (data.sessionStart && data.sessionEnd) parts.push(`Du ${fmtLong(data.sessionStart)} au ${fmtLong(data.sessionEnd)}`);
+      const hol = (data.holidays || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+      if (hol.length) {
+        parts.push('Congés : ' + hol.map(h => {
+          const when = h.endDate && h.endDate !== h.date ? `${fmtShort(h.date)} au ${fmtShort(h.endDate)}` : fmtShort(h.date);
+          return h.name ? `${when} (${h.name})` : when;
+        }).join(', '));
+      }
+      if (data.contact && data.contact.address) parts.push(data.contact.address);
+      parts.push('info@academie-amf.com');
+      printLine.textContent = parts.join('  ·  ');
     }
 
     // Contact phone/address
@@ -2314,9 +2339,38 @@
       updateCountdown();
       setInterval(updateCountdown, 60 * 1000);
 
+      // Impression : compresser la grille semaine (beforeprint = Firefox/Chrome, matchMedia = Chrome/Safari)
+      bindPrintMode();
+
     } catch (err) {
       showError('Impossible de charger l\'horaire. Vérifiez votre connexion ou rechargez la page.');
     }
+  }
+
+  /* ============================================================
+     PRINT MODE — la vue semaine se re-dessine plus compacte
+     pour tenir sur UNE page paysage, puis revient à l'écran normal.
+     ============================================================ */
+
+  let _printMode = false;
+
+  function setPrintMode(on) {
+    if (on === _printMode || !appData) return;
+    _printMode = on;
+    HOUR_HEIGHT_PX = on ? HOUR_HEIGHT_PRINT : HOUR_HEIGHT_SCREEN;
+    renderWeekView(appData);
+    applyFilters();
+  }
+
+  function bindPrintMode() {
+    window.addEventListener('beforeprint', () => setPrintMode(true));
+    window.addEventListener('afterprint',  () => setPrintMode(false));
+    try {
+      const mq = window.matchMedia('print');
+      const onChange = (e) => setPrintMode(e.matches);
+      if (mq.addEventListener) mq.addEventListener('change', onChange);
+      else if (mq.addListener) mq.addListener(onChange);
+    } catch { /* matchMedia indisponible : beforeprint suffit */ }
   }
 
   /* ============================================================

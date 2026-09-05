@@ -851,7 +851,7 @@ body {
    PRINT STYLES
    ============================================================ */
 
-@page { margin: 1cm; }
+@page { size: letter landscape; margin: 0.6cm 0.8cm; }
 
 @media print {
   body {
@@ -859,6 +859,44 @@ body {
     color: black !important;
     font-size: 11pt;
   }
+
+  /* --- Tenir sur UNE page paysage : en-tête compact, pied de page masqué --- */
+  .skip-link,
+  #contact,
+  #announcement-section,
+  .session-nav-btn {
+    display: none !important;
+  }
+
+  header.hero-gradient > div { padding: 0.15rem 0 0.35rem !important; }
+  header.hero-gradient .flex-1 { text-align: left !important; }
+  header.hero-gradient .justify-center { justify-content: flex-start !important; }
+  header.hero-gradient .items-center { align-items: flex-start !important; }
+  .hero-title { font-size: 1.3rem !important; line-height: 1.1 !important; }
+  .hero-accent-line { display: none !important; }
+  header.hero-gradient p { color: #222 !important; }
+  header.hero-gradient .mt-5 { margin-top: 0.1rem !important; font-size: 1rem !important; }
+  header.hero-gradient .mt-1 { margin-top: 0 !important; }
+  #print-session-dates { display: block !important; margin-top: 0.1rem; color: #333 !important; }
+  #schedule-legend { margin-top: 0.25rem !important; }
+  #schedule-legend * { color: #222 !important; }
+
+  main#horaire { padding: 0.3rem 0 0 !important; max-width: none !important; }
+
+  .week-grid {
+    min-width: 0 !important;
+    grid-template-columns: 44px repeat(7, 1fr) !important;
+  }
+  .week-day-header {
+    position: static !important;
+    padding: 0.1rem 0.1rem 0.25rem !important;
+    font-size: 0.6rem !important;
+  }
+  .week-day-header .day-class-count { font-size: 0.5rem !important; }
+  .timeline-block { padding: 2px 4px !important; border-radius: 4px !important; }
+  .tb-time { font-size: 0.5rem !important; }
+  .tb-name { font-size: 0.56rem !important; line-height: 1.1 !important; }
+  .tb-age  { font-size: 0.5rem !important; }
 
   .hero-gradient {
     background: none !important;
