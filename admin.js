@@ -191,7 +191,7 @@ async function loadFromSupabase() {
     sessionEnd: session.end_date,
     updated: today(),
     contact: {
-      email: 'info@academie-amf.com',
+      email: 'cbas1974@hotmail.com',
       phone: '',
       address: '245 Rue Gamble Ouest, studio 150A, Rouyn-Noranda, QC J9X 2R8',
     },

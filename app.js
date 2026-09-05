@@ -277,7 +277,7 @@
       sessionEnd: session.end_date,
       updated: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })(),
       contact: {
-        email: 'info@academie-amf.com',
+        email: 'cbas1974@hotmail.com',
         phone: '',
         address: '245 Rue Gamble Ouest, studio 150A, Rouyn-Noranda, QC J9X 2R8',
       },
@@ -652,7 +652,7 @@
 
       const infos = [];
       if (data.contact && data.contact.address) infos.push(esc(data.contact.address));
-      infos.push('info@academie-amf.com');
+      infos.push('cbas1974@hotmail.com');
 
       printLine.innerHTML = `
         <div class="psd-grid">
