@@ -1075,9 +1075,11 @@ body {
   .timeline-block[data-discipline="jiujitsu"][data-type="Ado"] .tb-age { color: #7c2d12 !important; }
 
   /* Autodéfense femmes — rose */
+  /* Rose fonce : a #fbdcec/#db2777 l ecart avec le rouge Muay Thai n etait
+     que de 8.5 (Delta E) -- sous 10 l oeil ne les separe plus sur papier. */
   .timeline-block[data-type="Femmes"] {
-    background: #fbdcec !important;
-    border-left-color: #db2777 !important;
+    background: #f6c6e0 !important;
+    border-left-color: #a21567 !important;
   }
   .timeline-block[data-type="Femmes"] .tb-name,
   .timeline-block[data-type="Femmes"] .tb-time,
