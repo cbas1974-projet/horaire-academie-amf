@@ -1,6 +1,17 @@
 [build]
   publish = "."
 
+# ── Ancienne page « liste d'attente » retirée le 2026-10-04 : les vieux liens mènent à l'accueil ──
+[[redirects]]
+  from = "/liste-attente.html"
+  to = "/"
+  status = 301
+
+[[redirects]]
+  from = "/liste-attente"
+  to = "/"
+  status = 301
+
 # ── Proxy same-origin : /api/* -> backend VPS (fiable dans le navigateur intégré de Facebook) ──
 [[redirects]]
   from = "/api/*"
