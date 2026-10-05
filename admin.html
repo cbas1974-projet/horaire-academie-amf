@@ -283,7 +283,8 @@
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col gap-3">
             <div class="text-sm font-semibold text-gray-800">Importer un JSON</div>
             <p class="text-xs text-gray-500">Charge un fichier <code>schedule.json</code> existant pour le modifier.</p>
-            <label class="mt-auto cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition text-center">
+            <!-- CH-0060 2026-10-05 : id ajoute pour griser/bloquer l'import en lecture seule -->
+            <label id="importFileLabel" class="mt-auto cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition text-center">
               Choisir un fichier…
               <input type="file" accept=".json" id="importFileInput" class="hidden" />
             </label>

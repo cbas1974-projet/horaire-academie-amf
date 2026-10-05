@@ -25,6 +25,16 @@ let currentSessionId = null; // set on load
 const ADMIN_READ_ONLY = true; // CH-0060 2026-10-05
 const READ_ONLY_MSG = 'Lecture seule : les modifications se font maintenant dans DOJO_MANAGER (Config session).'; // CH-0060 2026-10-05
 
+// CH-0060 2026-10-05 : garde unique des fenetres d'edition/creation.
+// Appelee en 1re ligne de CHAQUE fonction qui ouvre un formulaire (open*Modal)
+// ou qui charge un fichier (handleImport). En lecture seule : message + true
+// (l'appelant sort sans rien ouvrir). Peu importe le bouton qui l'a appelee.
+function readOnlyBlocked() {
+  if (!ADMIN_READ_ONLY) return false;
+  showToast(READ_ONLY_MSG, 'warning');
+  return true;
+}
+
 async function sbRequest(table, method, body, query = '') {
   // CH-0060 2026-10-05 : garde centrale — toute ecriture (POST/PATCH/DELETE/PUT)
   // est refusee AVANT le fetch, donc aucune requete d'ecriture ne part vers Supabase.
@@ -628,6 +638,7 @@ async function deleteCourse(dayIndex, id) {
 // ── Course Modal ─────────────────────────────────────────────
 
 function openCourseModal(cls, dayIndex) {
+  if (readOnlyBlocked()) return; // CH-0060 2026-10-05 : aucune fenetre d'edition en lecture seule
   const modal = document.getElementById('courseModal');
   document.getElementById('courseModalTitle').textContent = cls ? 'Modifier le cours' : 'Ajouter un cours';
   document.getElementById('courseId').value       = cls ? cls.id        : '';
@@ -811,6 +822,7 @@ function renderHolidays() {
 }
 
 function openHolidayModal(h) {
+  if (readOnlyBlocked()) return; // CH-0060 2026-10-05 : aucune fenetre d'edition en lecture seule
   document.getElementById('holidayModalTitle').textContent = h ? 'Modifier le congé' : 'Ajouter un congé';
   document.getElementById('holidayId').value      = h ? h.id      : '';
   document.getElementById('holidayDate').value    = h ? h.date    : '';
@@ -928,6 +940,7 @@ function renderEvents() {
 }
 
 function openEventModal(ev) {
+  if (readOnlyBlocked()) return; // CH-0060 2026-10-05 : aucune fenetre d'edition en lecture seule
   document.getElementById('eventModalTitle').textContent = ev ? 'Modifier l\'événement' : 'Ajouter un événement';
   document.getElementById('eventId').value          = ev ? ev.id          : '';
   document.getElementById('eventDate').value        = ev ? ev.date        : '';
@@ -1124,6 +1137,7 @@ function renderAnnouncements() {
 }
 
 function openAnnouncementModal(a) {
+  if (readOnlyBlocked()) return; // CH-0060 2026-10-05 : aucune fenetre d'edition en lecture seule
   document.getElementById('announcementModalTitle').textContent = a ? 'Modifier l\'annonce' : 'Ajouter une annonce';
   document.getElementById('announcementId').value     = a ? a.id     : '';
   document.getElementById('announcementText').value   = a ? a.text   : '';
@@ -1295,6 +1309,7 @@ function renderDateRanges() {
 }
 
 function openDateRangeModal(dr) {
+  if (readOnlyBlocked()) return; // CH-0060 2026-10-05 : aucune fenetre d'edition en lecture seule
   document.getElementById('dateRangeModalTitle').textContent = dr ? 'Modifier la plage' : 'Ajouter une plage';
   document.getElementById('dateRangeId').value    = dr ? dr.id        : '';
   document.getElementById('dateRangeName').value  = dr ? dr.name      : '';
@@ -1555,6 +1570,7 @@ async function insertCopiedCourse(sourceCls, destDayIndex, destDateRangeId, dest
 // ── 3.1 — Copy ONE COURSE ────────────────────────────────────
 
 function openCopyCourseModal(cls, dayIndex) {
+  if (readOnlyBlocked()) return; // CH-0060 2026-10-05 : aucune fenetre d'edition en lecture seule
   const modal = document.getElementById('copyCourseModal');
   document.getElementById('copyCourseSourceId').value = cls.id;
   document.getElementById('copyCourseSourceName').value = `${cls.name} (${cls.time})`;
@@ -1626,6 +1642,7 @@ async function saveCopyCourse() {
 // ── 3.2 — Copy ONE DAY ──────────────────────────────────────
 
 function openCopyDayModal(dayIndex) {
+  if (readOnlyBlocked()) return; // CH-0060 2026-10-05 : aucune fenetre d'edition en lecture seule
   const modal = document.getElementById('copyDayModal');
   const dayNames = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 
@@ -1727,6 +1744,7 @@ async function saveCopyDay() {
 // ── 3.3 — Copy ENTIRE SESSION ────────────────────────────────
 
 function openCopySessionModal() {
+  if (readOnlyBlocked()) return; // CH-0060 2026-10-05 : aucune fenetre d'edition en lecture seule
   const modal = document.getElementById('copySessionModal');
   const activeFilterSessionId = selectedCoursSessionId === '__all__'
     ? null
@@ -1833,6 +1851,7 @@ function downloadJSON() {
 // ── JSON Import ──────────────────────────────────────────────
 
 function handleImport(file) {
+  if (readOnlyBlocked()) return; // CH-0060 2026-10-05 : aucune fenetre d'edition en lecture seule
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
@@ -2090,6 +2109,7 @@ function showConfirm(title, msg) {
 // ── Session CRUD ────────────────────────────────────────────
 
 function openSessionModal(mode, session) {
+  if (readOnlyBlocked()) return; // CH-0060 2026-10-05 : aucune fenetre d'edition en lecture seule
   const modal = document.getElementById('sessionModal');
   const title = document.getElementById('sessionModalTitle');
   const nameInput = document.getElementById('sessionNameInput');
@@ -2320,6 +2340,10 @@ const READ_ONLY_SELECTORS = [ // CH-0060 2026-10-05
   // Parametres, annonces, plages de dates
   '#saveParamsBtn', '#addAnnouncementBtn', '#saveAnnouncementBtn', '.delete-ann-btn', '.ann-active-toggle',
   '#addDateRangeBtn', '#saveDateRangeBtn', '.delete-dr-btn',
+  // CH-0060 2026-10-05 (suite) : boutons « Modifier » et import, oublies au 1er passage
+  // (la garde readOnlyBlocked() dans les open*Modal reste la protection de fond)
+  '.edit-course-btn', '.edit-holiday-btn', '.edit-event-btn', '.edit-ann-btn', '.edit-dr-btn',
+  '#importFileLabel',
 ].join(',');
 
 function initReadOnlyMode() { // CH-0060 2026-10-05
