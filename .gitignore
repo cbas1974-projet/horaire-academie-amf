@@ -6,3 +6,8 @@ stitch/
 .env
 .env.*
 context.md
+
+# CH-0060 2026-10-05 : outils locaux et sauvegardes, jamais publies
+__pycache__/
+*.bak-*
+creer_plages_session.py

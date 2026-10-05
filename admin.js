@@ -16,7 +16,22 @@ const SUPABASE_ANON = 'sb_publishable_1YPnPq0t2cGBC9Mbs9VJyg_OHx7hyFS';
 
 let currentSessionId = null; // set on load
 
+// ── CH-0060 2026-10-05 : PANNEAU EN LECTURE SEULE ────────────
+// Depuis le serrage securite du 2026-07-03 (RFC_02 Phase 4), la cle publique
+// n'a plus le droit d'ecrire dans les tables schedule_* (erreur 42501).
+// Decision : on ne rouvre PAS l'ecriture publique. Les modifications se font
+// dans DOJO_MANAGER (Config session). Ici : lecture seule.
+// Retour arriere : passer ADMIN_READ_ONLY a false (ou restaurer admin.js.bak-2026-10-05).
+const ADMIN_READ_ONLY = true; // CH-0060 2026-10-05
+const READ_ONLY_MSG = 'Lecture seule : les modifications se font maintenant dans DOJO_MANAGER (Config session).'; // CH-0060 2026-10-05
+
 async function sbRequest(table, method, body, query = '') {
+  // CH-0060 2026-10-05 : garde centrale — toute ecriture (POST/PATCH/DELETE/PUT)
+  // est refusee AVANT le fetch, donc aucune requete d'ecriture ne part vers Supabase.
+  if (ADMIN_READ_ONLY && String(method).toUpperCase() !== 'GET') {
+    console.warn(`[CH-0060] Ecriture bloquee (lecture seule) : ${method} ${table}`);
+    throw new Error(`[CH-0060] ${READ_ONLY_MSG}`);
+  }
   const url = `${SUPABASE_URL}/rest/v1/${table}${query}`;
   const headers = {
     'apikey': SUPABASE_ANON,
@@ -600,7 +615,7 @@ async function deleteCourse(dayIndex, id) {
   renderSchedule();
 
   try {
-    await sbRequest('schedule_courses', 'DELETE', null, `?id=eq.${encodeURIComponent(id)}`);
+    await sbRequest('schedule_courses', 'DELETE', null, `?id=eq.${encodeURIComponent(id)}`); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
     showToast('Cours supprimé', 'success');
     markSaved();
   } catch (err) {
@@ -722,7 +737,7 @@ async function saveCourse() {
 
   // Persist to Supabase
   try {
-    await sbRequest('schedule_courses', 'POST', [{
+    await sbRequest('schedule_courses', 'POST', [{ // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
       id: courseId,
       day: dayNames[dayIndex],
       day_index: dayIndex,
@@ -782,7 +797,7 @@ function renderHolidays() {
         data.holidays = data.holidays.filter(x => x.id !== hid);
         renderHolidays();
         try {
-          await sbRequest('schedule_holidays', 'DELETE', null, `?id=eq.${encodeURIComponent(hid)}`);
+          await sbRequest('schedule_holidays', 'DELETE', null, `?id=eq.${encodeURIComponent(hid)}`); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
           showToast('Congé supprimé', 'success');
           markSaved();
         } catch (err) {
@@ -838,9 +853,9 @@ async function saveHoliday() {
   try {
     const row = { session_id: sessionId, date, end_date: endDate || null, label: name };
     if (id) {
-      await sbRequest('schedule_holidays', 'PATCH', row, `?id=eq.${encodeURIComponent(id)}`);
+      await sbRequest('schedule_holidays', 'PATCH', row, `?id=eq.${encodeURIComponent(id)}`); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
     } else {
-      const result = await sbRequest('schedule_holidays', 'POST', [row]);
+      const result = await sbRequest('schedule_holidays', 'POST', [row]); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
       if (result && result[0]) {
         // Update local ID with Supabase UUID before rendering
         const localEntry = data.holidays[data.holidays.length - 1];
@@ -899,7 +914,7 @@ function renderEvents() {
         data.events = data.events.filter(x => x.id !== eid);
         renderEvents();
         try {
-          await sbRequest('schedule_events', 'DELETE', null, `?id=eq.${encodeURIComponent(eid)}`);
+          await sbRequest('schedule_events', 'DELETE', null, `?id=eq.${encodeURIComponent(eid)}`); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
           showToast('Événement supprimé', 'success');
           markSaved();
         } catch (err) {
@@ -969,9 +984,9 @@ async function saveEvent() {
       importance: important ? 'high' : 'normal',
     };
     if (id) {
-      await sbRequest('schedule_events', 'PATCH', row, `?id=eq.${encodeURIComponent(id)}`);
+      await sbRequest('schedule_events', 'PATCH', row, `?id=eq.${encodeURIComponent(id)}`); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
     } else {
-      const result = await sbRequest('schedule_events', 'POST', [row]);
+      const result = await sbRequest('schedule_events', 'POST', [row]); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
       if (result && result[0]) {
         // Update local ID with Supabase UUID before rendering
         const localEntry = data.events[data.events.length - 1];
@@ -1015,7 +1030,7 @@ async function saveParams() {
   // Persist session to Supabase
   if (currentSessionId) {
     try {
-      await sbRequest('schedule_sessions', 'PATCH', {
+      await sbRequest('schedule_sessions', 'PATCH', { // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
         name: data.session,
         start_date: data.sessionStart,
         end_date: data.sessionEnd,
@@ -1073,7 +1088,7 @@ function renderAnnouncements() {
       if (a) {
         a.active = chk.checked;
         try {
-          await sbRequest('schedule_announcements', 'PATCH', { is_active: chk.checked }, `?id=eq.${encodeURIComponent(a.id)}`);
+          await sbRequest('schedule_announcements', 'PATCH', { is_active: chk.checked }, `?id=eq.${encodeURIComponent(a.id)}`); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
           markSaved();
         } catch (err) {
           console.error('Supabase toggle failed:', err);
@@ -1095,7 +1110,7 @@ function renderAnnouncements() {
         data.announcements = data.announcements.filter(x => x.id !== aid);
         renderAnnouncements();
         try {
-          await sbRequest('schedule_announcements', 'DELETE', null, `?id=eq.${encodeURIComponent(aid)}`);
+          await sbRequest('schedule_announcements', 'DELETE', null, `?id=eq.${encodeURIComponent(aid)}`); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
           showToast('Annonce supprimée', 'success');
           markSaved();
         } catch (err) {
@@ -1151,9 +1166,9 @@ async function saveAnnouncement() {
       is_active: active,
     };
     if (id) {
-      await sbRequest('schedule_announcements', 'PATCH', row, `?id=eq.${encodeURIComponent(id)}`);
+      await sbRequest('schedule_announcements', 'PATCH', row, `?id=eq.${encodeURIComponent(id)}`); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
     } else {
-      const result = await sbRequest('schedule_announcements', 'POST', [row]);
+      const result = await sbRequest('schedule_announcements', 'POST', [row]); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
       if (result && result[0]) {
         const localEntry = data.announcements[data.announcements.length - 1];
         localEntry.id = result[0].id;
@@ -1358,7 +1373,7 @@ async function saveDateRange() {
       end_date: end,
       sort_order: entry.sortOrder,
     };
-    await sbRequest('schedule_date_ranges', 'POST', [row]);
+    await sbRequest('schedule_date_ranges', 'POST', [row]); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
     showToast(id ? 'Plage mise à jour' : 'Plage ajoutée', 'success');
     markSaved();
   } catch (err) {
@@ -1382,7 +1397,7 @@ async function deleteDateRange(id) {
 
   try {
     // Supabase FK ON DELETE SET NULL handles the course column reset
-    await sbRequest('schedule_date_ranges', 'DELETE', null, `?id=eq.${encodeURIComponent(id)}`);
+    await sbRequest('schedule_date_ranges', 'DELETE', null, `?id=eq.${encodeURIComponent(id)}`); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
     showToast('Plage supprimée', 'success');
     markSaved();
   } catch (err) {
@@ -1517,7 +1532,7 @@ async function insertCopiedCourse(sourceCls, destDayIndex, destDateRangeId, dest
   if (destDay) destDay.classes.push(newCourse);
 
   // Persist to Supabase
-  await sbRequest('schedule_courses', 'POST', [{
+  await sbRequest('schedule_courses', 'POST', [{ // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
     id: newId,
     day: dayNames[destDayIndex],
     day_index: destDayIndex,
@@ -2155,10 +2170,10 @@ async function saveSession() {
 
   try {
     if (editId) {
-      await sbRequest('schedule_sessions', 'PATCH', { name, start_date: start, end_date: end }, `?id=eq.${encodeURIComponent(editId)}`);
+      await sbRequest('schedule_sessions', 'PATCH', { name, start_date: start, end_date: end }, `?id=eq.${encodeURIComponent(editId)}`); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
       showToast('Session modifiée', 'success');
     } else {
-      await sbRequest('schedule_sessions', 'POST', { id: generateUUID(), name, start_date: start, end_date: end, is_current: false });
+      await sbRequest('schedule_sessions', 'POST', { id: generateUUID(), name, start_date: start, end_date: end, is_current: false }); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
       showToast('Session créée', 'success');
     }
     closeSessionModal();
@@ -2182,8 +2197,8 @@ async function activateSession() {
   errDiv.classList.add('hidden');
 
   try {
-    await sbRequest('schedule_sessions', 'PATCH', { is_current: false }, '?is_current=eq.true');
-    await sbRequest('schedule_sessions', 'PATCH', { is_current: true }, `?id=eq.${encodeURIComponent(s.id)}`);
+    await sbRequest('schedule_sessions', 'PATCH', { is_current: false }, '?is_current=eq.true'); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
+    await sbRequest('schedule_sessions', 'PATCH', { is_current: true }, `?id=eq.${encodeURIComponent(s.id)}`); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
     showToast('Session activée — recharge la page pour travailler dessus', 'success');
     await loadSessions();
   } catch (err) {
@@ -2202,7 +2217,7 @@ async function deactivateSession() {
   if (!confirmed) return;
 
   try {
-    await sbRequest('schedule_sessions', 'PATCH', { is_current: false }, `?id=eq.${encodeURIComponent(s.id)}`);
+    await sbRequest('schedule_sessions', 'PATCH', { is_current: false }, `?id=eq.${encodeURIComponent(s.id)}`); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
     showToast('Session désactivée', 'success');
     await loadSessions();
   } catch (err) {
@@ -2237,7 +2252,7 @@ async function archiveSession() {
 
   try {
     const newName = s.name.startsWith('[ARCHIVE]') ? s.name : `[ARCHIVE] ${s.name}`;
-    await sbRequest('schedule_sessions', 'PATCH', { name: newName, is_current: false }, `?id=eq.${encodeURIComponent(s.id)}`);
+    await sbRequest('schedule_sessions', 'PATCH', { name: newName, is_current: false }, `?id=eq.${encodeURIComponent(s.id)}`); // CH-0060 2026-10-05 : ecriture bloquee par sbRequest (panneau en lecture seule)
     showToast('Session archivée', 'success');
     await loadSessions();
   } catch (err) {
@@ -2287,12 +2302,47 @@ function initSessionsTab() {
   }
 }
 
+// ── CH-0060 2026-10-05 : desactivation des boutons d'ecriture ─
+// Les boutons restent dans la page (rien supprime) mais sont grises et un clic
+// est intercepte en phase de capture AVANT les gestionnaires d'origine :
+// pas de modification locale fantome, pas d'appel reseau, juste un message.
+const READ_ONLY_SELECTORS = [ // CH-0060 2026-10-05
+  // Sessions
+  '#newSessionBtn', '#sessionActivateBtn', '#sessionDeactivateBtn', '#sessionEditBtn',
+  '#sessionDuplicateBtn', '#sessionArchiveBtn', '#saveSessionBtn', '#copySessionBtn', '#saveCopySessionBtn',
+  // Cours
+  '.add-course-btn', '.copy-day-btn', '.duplicate-course-btn', '.delete-course-btn',
+  '#saveCourseBtn', '#saveCopyCourseBtn', '#saveCopyDayBtn',
+  // Conges
+  '#addHolidayBtn', '#saveHolidayBtn', '.delete-holiday-btn',
+  // Evenements
+  '#addEventBtn', '#saveEventBtn', '.delete-event-btn',
+  // Parametres, annonces, plages de dates
+  '#saveParamsBtn', '#addAnnouncementBtn', '#saveAnnouncementBtn', '.delete-ann-btn', '.ann-active-toggle',
+  '#addDateRangeBtn', '#saveDateRangeBtn', '.delete-dr-btn',
+].join(',');
+
+function initReadOnlyMode() { // CH-0060 2026-10-05
+  if (!ADMIN_READ_ONLY) return;
+  const style = document.createElement('style');
+  style.textContent = `${READ_ONLY_SELECTORS} { opacity: .4 !important; cursor: not-allowed !important; }`;
+  document.head.appendChild(style);
+  document.addEventListener('click', e => {
+    const el = e.target.closest && e.target.closest(READ_ONLY_SELECTORS);
+    if (!el) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    showToast(READ_ONLY_MSG, 'warning');
+  }, true); // true = phase de capture (passe avant les gestionnaires d'origine)
+}
+
 // ── Init ─────────────────────────────────────────────────────
 
 // Run immediately when script loads (don't wait for DOMContentLoaded)
 // since admin.js is loaded dynamically after DOMContentLoaded has passed
 (async () => {
   console.log('⏱️ admin.js loaded, initializing...');
+  initReadOnlyMode(); // CH-0060 2026-10-05
   await loadData();
   initBindings();
   initSessionsTab();

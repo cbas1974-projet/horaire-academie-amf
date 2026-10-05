@@ -24,6 +24,14 @@
 <body class="bg-gray-50 text-gray-900 min-h-screen font-sans">
 
 
+  <!-- CH-0060 2026-10-05 : bandeau lecture seule (l'ecriture publique vers Supabase est fermee depuis le 2026-07-03) -->
+  <div id="readOnlyBanner" role="alert"
+       style="background:#fef3c7;border-bottom:2px solid #d97706;color:#78350f;padding:10px 16px;text-align:center;font-weight:600;font-size:14px;">
+    Les modifications se font maintenant dans DOJO_MANAGER (Config session). Ce panneau est en lecture seule.
+    <a href="https://dojomanger.netlify.app" target="_blank" rel="noopener noreferrer"
+       style="margin-left:8px;text-decoration:underline;color:#92400e;">Ouvrir DOJO_MANAGER</a>
+  </div>
+
   <!-- MAIN APP -->
   <div id="app">
 
