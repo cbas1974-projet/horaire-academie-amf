@@ -55,6 +55,14 @@
     }
     .loi25 { margin: 14px 0 0; font-size: 0.82rem; color: var(--texte-2); }
     .cache { position: absolute; left: -10000px; }
+    [hidden] { display: none !important; }
+    .places, .complet {
+      background: var(--carte); border: 2px solid var(--or); border-radius: 10px;
+      padding: 14px 16px; margin-bottom: 16px; text-align: center;
+      font-size: 1.15rem; font-weight: 700; line-height: 1.35;
+    }
+    .places strong { color: var(--or-clair); font-size: 1.7rem; font-weight: 800; }
+    .complet { color: var(--or-clair); }
   </style>
 </head>
 <body>
@@ -88,6 +96,9 @@
       </ul>
       <p><strong>Aucune sortie pendant la journée, même pour aller chercher à manger&nbsp;: votre enfant apporte son lunch.</strong></p>
     </section>
+
+    <p id="places" class="places" role="status" hidden><strong id="places_nombre"></strong><span id="places_texte"></span></p>
+    <p id="complet" class="complet" role="status" hidden>Complet&nbsp;: les 20&nbsp;places sont prises. Écrivez à l'Académie pour la liste d'attente.</p>
 
     <form name="camp-16-novembre" method="POST" action="https://camp.srv1302277.hstgr.cloud/inscription">
       <p class="cache" aria-hidden="true"><label>Ne pas remplir : <input type="text" name="bot-field" tabindex="-1" autocomplete="off"></label></p>
@@ -136,5 +147,34 @@
       <p class="loi25">Ces renseignements servent seulement à organiser le camp du 16&nbsp;novembre. Seule l'équipe de l'Académie les voit. Ils sont effacés après le camp.</p>
     </form>
   </main>
+  <script>
+    // Compteur de places : lit seulement un compte (total, inscrits, restantes) sur le serveur du camp.
+    // Si la lecture échoue, rien n'apparaît et le formulaire reste utilisable.
+    (function () {
+      var boite = document.getElementById('places');
+      var complet = document.getElementById('complet');
+      var formulaire = document.querySelector('form[name="camp-16-novembre"]');
+      function afficherComplet() {
+        formulaire.hidden = true;
+        boite.hidden = true;
+        complet.hidden = false;
+      }
+      if (new URLSearchParams(location.search).get('complet') === '1') { afficherComplet(); return; }
+      if (!window.fetch) { return; }
+      fetch('https://camp.srv1302277.hstgr.cloud/places', { cache: 'no-store', credentials: 'omit' })
+        .then(function (r) { if (!r.ok) { throw new Error('places ' + r.status); } return r.json(); })
+        .then(function (d) {
+          var total = d && d.total;
+          var restantes = d && d.restantes;
+          if (!Number.isInteger(total) || !Number.isInteger(restantes) || total < 1 || restantes < 0) { return; }
+          if (restantes === 0) { afficherComplet(); return; }
+          document.getElementById('places_nombre').textContent = restantes;
+          document.getElementById('places_texte').textContent =
+            (restantes === 1 ? ' place restante sur ' : ' places restantes sur ') + total;
+          boite.hidden = false;
+        })
+        .catch(function () { /* lecture impossible : on n'affiche rien */ });
+    })();
+  </script>
 </body>
 </html>
