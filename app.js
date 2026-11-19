@@ -57,6 +57,7 @@
   let _rawAnnouncements = [];
   let _rawRanges      = [];
   let _publicSessIdx  = 0;    // index into _allSessions currently displayed
+  let _countdownData  = null; // appData of the is_current session (countdown only)
 
   // Week view state
   let currentWeekStart = null;       // Date — Sunday of the displayed week
@@ -339,6 +340,11 @@
     const forceLatest = new URLSearchParams(window.location.search).get('saison') === 'automne';
     const currentIdx = sessions.findIndex(s => s.is_current);
     _publicSessIdx = forceLatest ? sessions.length - 1 : (currentIdx >= 0 ? currentIdx : 0);
+
+    // Countdown always follows the REAL current session, whatever session is displayed
+    _countdownData = currentIdx >= 0
+      ? buildAppDataForSession(sessions[currentIdx], courses, holidays, events, announcements, ranges)
+      : null;
 
     return buildAppDataForSession(
       sessions[_publicSessIdx], courses, holidays, events, announcements, ranges
@@ -698,23 +704,32 @@
      COUNTDOWN
      ============================================================ */
 
-  function getNextClass(schedule, now) {
-    const todayJS   = now.getDay(); // 0=Sun
-    const nowMins   = now.getHours() * 60 + now.getMinutes();
+  /**
+   * Next class that is REALLY held, starting now.
+   * Walks real calendar dates through getClassesForDate(), so holidays
+   * (a relâche lasts a full week), the session bounds and each course's
+   * date range are respected. Stops after the last day of the session.
+   */
+  function getNextClass(data, now) {
+    const schedule = data.schedule || [];
+    const holidays = data.holidays || [];
+    const nowMins  = now.getHours() * 60 + now.getMinutes();
+    const nowFloor = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
 
-    // Build ordered search: start from today, wrap around the week
-    const orderedDays = [];
-    for (let i = 0; i < 7; i++) {
-      const dayIndex = (todayJS + i) % 7;
-      const day = schedule.find(d => d.dayIndex === dayIndex);
-      if (day) orderedDays.push({ day, daysAhead: i });
+    let lastDay = data.sessionEnd || '';
+    for (const r of (data.dateRanges || [])) {
+      if (r.endDate && r.endDate > lastDay) lastDay = r.endDate;
     }
 
-    for (const { day, daysAhead } of orderedDays) {
-      if (!day.classes || !day.classes.length) continue;
+    for (let daysAhead = 0; daysAhead <= 366; daysAhead++) {
+      const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysAhead);
+      const dateYMD = toYMD(date);
+      if (lastDay && dateYMD > lastDay) break;
 
-      // Sort classes by startTime
-      const sorted = [...day.classes].sort(
+      const classes = getClassesForDate(dateYMD, schedule, holidays, data);
+      if (!classes.length) continue;
+
+      const sorted = [...classes].sort(
         (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
       );
 
@@ -722,7 +737,11 @@
         const startMins = timeToMinutes(cls.startTime);
         if (daysAhead === 0 && startMins <= nowMins) continue; // already started/past today
 
-        const minutesUntil = daysAhead * 24 * 60 + startMins - nowMins;
+        // Real clock difference (stays right across a daylight-saving change)
+        const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(),
+          Math.floor(startMins / 60), startMins % 60);
+        const minutesUntil = Math.round((start - nowFloor) / 60000);
+        const day = schedule.find(d => d.dayIndex === date.getDay());
         return { cls, day, daysAhead, minutesUntil, startMins };
       }
     }
@@ -752,7 +771,7 @@
     if (!cdv) return;
 
     const now    = new Date();
-    const result = getNextClass(appData.schedule, now);
+    const result = getNextClass(_countdownData || appData, now);
     if (!result) {
       cdv.textContent = 'Aucun cours à venir';
       return;
@@ -1282,18 +1301,19 @@
   /**
    * Filter classes for a specific date, respecting date ranges and session bounds.
    */
-  function getClassesForDate(dateYmd, schedule, holidays) {
+  function getClassesForDate(dateYmd, schedule, holidays, ctx) {
     if (getHolidayForDate(dateYmd, holidays)) return [];
-    if (!appData) return [];
+    const src = ctx || appData;   // ctx: another session's data (countdown)
+    if (!src) return [];
 
     const d = new Date(dateYmd + 'T00:00:00');
     const jsDay = d.getDay();
     const dayData = schedule.find(dd => dd.dayIndex === jsDay);
     if (!dayData || !dayData.classes || !dayData.classes.length) return [];
 
-    const dateRanges = appData.dateRanges || [];
-    const sessionStart = appData.sessionStart || '';
-    const sessionEnd   = appData.sessionEnd || '';
+    const dateRanges = src.dateRanges || [];
+    const sessionStart = src.sessionStart || '';
+    const sessionEnd   = src.sessionEnd || '';
 
     return dayData.classes.filter(cls => {
       let start = sessionStart;
